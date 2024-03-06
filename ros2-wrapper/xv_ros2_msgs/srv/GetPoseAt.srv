@@ -1,0 +1,5 @@
+# request
+builtin_interfaces/Time timestamp
+---
+# response
+geometry_msgs/PoseStamped pose
