@@ -59,6 +59,15 @@ sudo all_stream
 This command will display the output of the camera in the terminal. If the camera is connected and working properly, you should see the camera's output in the terminal (pose and IMU signals) and camera images.
 
 
+### Update Firmware
+
+To update the camera firmware, use the latest firmware image file in the `firmware` folder and run the following command (choose the correct firmware file for your camera model):
+```
+./xvisioUpdateImg <firmware_file>
+```
+
+Wait until `Done` is displayed in the terminal to complete the firmware update.
+
 ## Setting Up ROS2 Package
 
 To set up the ROS2 package for the XvisioTech camera, follow these steps:
@@ -69,7 +78,8 @@ To set up the ROS2 package for the XvisioTech camera, follow these steps:
 mkdir -p ~/ros2_ws/src
 cp xvsdk-ros2 ~/ros2_ws/src/
 cd ~/ros2_ws
-colcon build
+colcon build --packages-select xv_ros2_msgs
+colcon build --packages-select xv_sdk_ros2
 source ~/ros2_ws/install/setup.bash
 ```
 
@@ -104,3 +114,10 @@ The RViz window will open and display the camera's pose in the 3D space. You can
 For any issues or inquiries regarding the camera driver and examples, please contact:
 
 Andy Park <andypark.purdue@gmail.com>
+
+## References
+
+For more information on the XvisioTech cameras and their features, please refer to the official documentation:
+
+[https://www.xvisiotech.com/doc/](https://www.xvisiotech.com/doc/)
+
