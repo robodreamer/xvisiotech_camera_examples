@@ -31,12 +31,14 @@ void xv_dev_wrapper::init(void)
         initFisheyeCameras();
     }
 
-    //TODO detect plane 
+    //TODO detect plane
     if (m_device->slam())
     {
         initSlam();
     }
 
+    // NOTE: XR-50 camera does not have TOF and RGB outputs.
+    /*
     if(m_device->tofCamera())
     {
         initTofCamera();
@@ -50,6 +52,7 @@ void xv_dev_wrapper::init(void)
     {
         this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: rgb is null");
     }
+    */
 }
 
 bool xv_dev_wrapper::startImuOri()
@@ -106,24 +109,24 @@ bool xv_dev_wrapper::stop_slam(void)
     return false;
 }
 
-bool xv_dev_wrapper::slam_get_pose(geometry_msgs::msg::PoseStamped& poseSteamped, const builtin_interfaces::msg::Duration& prediction)
+bool xv_dev_wrapper::slam_get_pose(geometry_msgs::msg::PoseStamped& poseStamped, const builtin_interfaces::msg::Duration& prediction)
 {
     xv::Pose pose;
     bool ok = this->m_device->slam()->getPose(pose, get_sec(prediction));
     if (ok)
     {
-        poseSteamped = to_ros_poseStamped(pose, this->m_node->getFrameID("map_optical_frame"));
+        poseStamped = to_ros_poseStamped(pose, this->m_node->getFrameID("map_optical_frame"));
     }
     return ok;
 }
 
-bool xv_dev_wrapper::slam_get_pose_at(geometry_msgs::msg::PoseStamped& poseSteamped, const builtin_interfaces::msg::Time& time)
+bool xv_dev_wrapper::slam_get_pose_at(geometry_msgs::msg::PoseStamped& poseStamped, const builtin_interfaces::msg::Time& time)
 {
     Pose pose;
     bool ok = m_device->slam()->getPoseAt(pose, get_sec(time));
     if (ok)
     {
-        poseSteamped = to_ros_poseStamped(pose, this->m_node->getFrameID("map_optical_frame"));
+        poseStamped = to_ros_poseStamped(pose, this->m_node->getFrameID("map_optical_frame"));
     }
 
     return ok;
@@ -185,8 +188,10 @@ void xv_dev_wrapper::initOrientationStream(void)
 void xv_dev_wrapper::initFisheyeCameras(void)
 {
     getFECalibration();
-    registerFECallbackFunc();
-    //registerFEAntiDistortionCallbackFunc();
+    // registerFECallbackFunc(); // NOTE: This function is not working inside docker container.
+
+    // NOTE: below are commented out from the manufacturer's code.
+    // registerFEAntiDistortionCallbackFunc();
     // registerSGBMCallbackFunc();
 }
 
@@ -201,8 +206,8 @@ void xv_dev_wrapper::initSlam(void)
         }
         if(m_slam_pose_enable)
         {
-            geometry_msgs::msg::PoseStamped poseSteamped = to_ros_poseStamped(pose, this->m_node->getFrameID("map_optical_frame"));
-            this->m_node->publishSlamPose(poseSteamped);
+            geometry_msgs::msg::PoseStamped poseStamped = to_ros_poseStamped(pose, this->m_node->getFrameID("map_optical_frame"));
+            this->m_node->publishSlamPose(poseStamped);
             this->m_node->broadcasterTfTransform(toRosTransformStamped(pose,
                                                            this->m_node->getFrameID("map_optical_frame"),
                                                            this->m_node->getFrameID("imu_optical_frame")));
@@ -253,7 +258,7 @@ void xv_dev_wrapper::initTofCamera()
         sensor_msgs::msg::Image img = toRosImage(xvDepthImage, this->m_node->getFrameID("tof_optical_frame"));
         this->m_tofCameraInfo.header.frame_id = img.header.frame_id;
         this->m_tofCameraInfo.header.stamp = img.header.stamp;
-        
+
         this->m_node->publishTofCameraImage(img, m_tofCameraInfo);
     });
     this->m_device->tofCamera()->start();
@@ -393,12 +398,15 @@ void xv_dev_wrapper::formatXvOriToRosOriStamped(xv_ros2_msgs::msg::OrientationSt
 bool xv_dev_wrapper::registerFECallbackFunc(void)
 {
     m_device->fisheyeCameras()->start();
+    std::cout << "DEBUG -- Fisheye Cameras started" << std::endl;
+
+    // FIXME: it gets stuck here for some reason inside docker container.
     m_device->fisheyeCameras()->registerCallback([this](const FisheyeImages & xvFisheyeImages)
     {
         for (int i = 0; i < int(xvFisheyeImages.images.size()); ++i)
         {
             const auto& xvGrayImage = xvFisheyeImages.images[i];
-            
+
             if (!xvGrayImage.data)
             {
                 this->m_node->printInfoMsg("XVSDK-ROS-WRAPPER Warning: no FisheyeImages data");
@@ -409,8 +417,10 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
                 this->m_node->printInfoMsg("XVSDK-ROS-WRAPPER Warning: negative FisheyeImages host-timestamp");
                 return;
             }
-            
+
+            std::cout << "DEBUG -- Converting FishEye Camera Images to Ros Image" << std::endl;
             auto img = changeFEGrayScaleImage2RosImage(xvGrayImage, xvFisheyeImages.hostTimestamp, "");
+            std::cout << "DEBUG -- Fisheye Image converted to Ros Image" << std::endl;
 
             if (i == 0)
             {
@@ -433,6 +443,8 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
             }
         }
     });
+
+    std::cout << "DEBUG -- Registered FE Callback" << std::endl;
 }
 
 bool xv_dev_wrapper::registerFEAntiDistortionCallbackFunc(void)
@@ -442,7 +454,7 @@ bool xv_dev_wrapper::registerFEAntiDistortionCallbackFunc(void)
         for (int i = 0; i < int(xvFisheyeImages.images.size()); ++i)
         {
             const auto& xvGrayImage = xvFisheyeImages.images[i];
-            
+
             if (!xvGrayImage.data)
             {
                 this->m_node->printInfoMsg("XVSDK-ROS-WRAPPER Warning: no FisheyeImages data");
@@ -453,7 +465,7 @@ bool xv_dev_wrapper::registerFEAntiDistortionCallbackFunc(void)
                 this->m_node->printInfoMsg("XVSDK-ROS-WRAPPER Warning: negative FisheyeImages host-timestamp");
                 return;
             }
-            
+
             auto img = changeFEGrayScaleImage2RosImage(xvGrayImage, xvFisheyeImages.hostTimestamp, "");
 
             if (i == 0)
@@ -520,7 +532,7 @@ bool xv_dev_wrapper::registerSGBMCallbackFunc(void)
                 std::cerr << "XVSDK-ROS-WRAPPER Warning: negative SgbmImage host-timestamp" << std::endl;
                 return;
             }
-        
+
             auto img = toRosImage(xvSgbmImage, this->m_node->getFrameID("sgbm_frame"));
 
             this->m_sgbmCamInfo.header.frame_id = img.header.frame_id;
@@ -538,7 +550,7 @@ sensor_msgs::msg::Image xv_dev_wrapper::changeFEGrayScaleImage2RosImage(const Gr
         m_node->printInfoMsg("XVSDK-ROS-WRAPPER toRosImage() Error: negative timestamp");
     }
 
-   sensor_msgs::msg::Image rosImage;
+    sensor_msgs::msg::Image rosImage;
     rosImage.header.stamp = get_stamp_from_sec(timestamp);
     rosImage.header.frame_id = frame_id;
     rosImage.height = xvGrayImage.height;
@@ -595,12 +607,12 @@ void xv_dev_wrapper::getFECalibration()
 
 double xv_dev_wrapper::get_sec(const builtin_interfaces::msg::Duration& prediction) const
 {
-     return (double)prediction.sec + 1e-9*(double)prediction.nanosec; 
+     return (double)prediction.sec + 1e-9*(double)prediction.nanosec;
 }
 
 double xv_dev_wrapper::get_sec(const builtin_interfaces::msg::Time& timestamp)const
 {
-    return (double)timestamp.sec + 1e-9*(double)timestamp.nanosec; 
+    return (double)timestamp.sec + 1e-9*(double)timestamp.nanosec;
 }
 
 geometry_msgs::msg::PoseStamped xv_dev_wrapper::to_ros_poseStamped(const Pose& xvPose, const std::string& frame_id)
@@ -617,9 +629,9 @@ geometry_msgs::msg::PoseStamped xv_dev_wrapper::to_ros_poseStamped(const Pose& x
         ps.header.stamp = get_stamp_from_sec(currentTimestamp);
         old_timeStamp = currentTimestamp;
     }
-    catch(std::runtime_error& ex) 
+    catch(std::runtime_error& ex)
     {
-        ps.header.stamp = get_stamp_from_sec(old_timeStamp); 
+        ps.header.stamp = get_stamp_from_sec(old_timeStamp);
     }
     ps.header.frame_id = frame_id;
 
@@ -669,7 +681,7 @@ nav_msgs::msg::Path xv_dev_wrapper::toRosPoseStampedRetNavmsgs(const Pose& xvPos
     {
         this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER toRosPoseStamped() Error: negative Pose host-timestamp");
     }
-  
+
     geometry_msgs::msg::PoseStamped this_ps;
     this_ps.header.frame_id = frame_id;
     this_ps.header.stamp = get_stamp_from_sec(xvPose.hostTimestamp() > 0.1 ? xvPose.hostTimestamp() : 0.1);
@@ -682,7 +694,7 @@ nav_msgs::msg::Path xv_dev_wrapper::toRosPoseStampedRetNavmsgs(const Pose& xvPos
     this_ps.pose.orientation.y = quat[1];
     this_ps.pose.orientation.z = quat[2];
     this_ps.pose.orientation.w = quat[3];
-    
+
     path.poses.push_back(this_ps);
 
     return path;
@@ -696,16 +708,16 @@ geometry_msgs::msg::TransformStamped xv_dev_wrapper::toRosTransformStamped(const
     {
         std::cerr << "XVSDK-ROS-WRAPPER toRosTransformStamped() Error: negative Pose host-timestamp" << std::endl;
     }
-    
+
     try
     {
       double currentTimestamp = pose.hostTimestamp() > 0.1 ? pose.hostTimestamp() : 0.1;
       tf.header.stamp = get_stamp_from_sec(currentTimestamp);
       old_timeStamp = currentTimestamp;
     }
-    catch(std::runtime_error& ex) 
+    catch(std::runtime_error& ex)
     {
-        tf.header.stamp = get_stamp_from_sec(old_timeStamp);    
+        tf.header.stamp = get_stamp_from_sec(old_timeStamp);
     }
     tf.header.frame_id = parent_frame_id;
     tf.child_frame_id = frame_id;
@@ -719,7 +731,7 @@ geometry_msgs::msg::TransformStamped xv_dev_wrapper::toRosTransformStamped(const
     tf.transform.rotation.y = quat[1];
     tf.transform.rotation.z = quat[2];
     tf.transform.rotation.w = quat[3];
-    
+
     return tf;
 }
 
@@ -770,7 +782,7 @@ sensor_msgs::msg::Image xv_dev_wrapper::toRosImage(const ColorImage& xvColorImag
 {
   if (xvColorImage.hostTimestamp < 0)
     std::cerr << "XVSDK-ROS-WRAPPER toRosImage() Error: negative ColorImage host-timestamp" << std::endl;
-    
+
   sensor_msgs::msg::Image rosImage;
   rosImage.header.stamp = get_stamp_from_sec(xvColorImage.hostTimestamp > 0.1 ? xvColorImage.hostTimestamp : 0.1);
   rosImage.header.frame_id = frame_id;
