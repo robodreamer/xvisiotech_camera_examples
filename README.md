@@ -35,7 +35,7 @@ Set up USB permissions by downloading the permissions file and copying it to the
 
 ```bash
 sudo cp 99-xvisio.rules /etc/udev/rules.d/
-sudo udevadm control --reload-rules && udevadm trigger
+sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
 The camera driver is now installed and ready to use. You can proceed to the next section to set up the ROS2 package and start using the camera.
@@ -66,7 +66,7 @@ To update the camera firmware, use the latest firmware image file in the `firmwa
 ./xvisioUpdateImg <firmware_file>
 ```
 
-Wait until `Done` is displayed in the terminal to complete the firmware update.
+Wait until `Done` is displayed in the terminal to complete the firmware update. After the update is complete, restart the camera by disconnecting and reconnecting the USB cable. Note that this step needs to be done only once.
 
 ## Setting Up ROS2 Package
 
