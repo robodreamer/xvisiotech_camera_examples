@@ -1,6 +1,6 @@
 
 from ctypes import *
-dll = CDLL("../../lib/libxvisio-CInterface-wrapper.so")
+dll = CDLL("./libxvisio-CInterface-wrapper.so")
 
 
 class Vector3F(Structure):
@@ -57,7 +57,7 @@ class TagTransData(Structure):
                     ('quaternion', c_float * 4)]
 
 
-#slam 
+#slam
 position = Vector3F()
 orientation = Vector3F()
 quaternion = Quaternion()
