@@ -16,10 +16,18 @@ find_package(geometry_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/OrientationStamped.msg"
+  "msg/ColorDepth.msg"
   "srv/GetOrientation.srv"
   "srv/GetOrientationAt.srv"
   "srv/GetPose.srv"
   "srv/GetPoseAt.srv"
+  "srv/LoadMapAndSwitchCslam.srv"
+  "srv/SaveMapAndSwitchCslam.srv"
+  "srv/ControllerStart.srv"
+  "srv/ControllerStop.srv"
+  "msg/Controller.msg"
+  "msg/EventData.msg"
+  "msg/ButtonMsg.msg"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
 if(BUILD_TESTING)
