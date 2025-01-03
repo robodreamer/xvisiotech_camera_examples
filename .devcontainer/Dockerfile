@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y \
     libboost-system-dev libboost-program-options-dev libboost-date-time-dev liboctomap-dev \
     git wget curl nano usbutils \
     libgtk-3-dev x11-apps \
-    ros-${ROS_DISTRO}-image-transport
+    ros-${ROS_DISTRO}-image-transport ros-${ROS_DISTRO}-rviz2
 
 # (Optional) If you have other tools or dependencies, add them here.
 
@@ -60,6 +60,9 @@ RUN mkdir -p /home/${USERNAME}/ros2_ws/src
 WORKDIR /home/${USERNAME}/ros2_ws
 
 # If 'xvsdk-ros2' is in the same folder as the Dockerfile or visible in build context:
-COPY xvsdk-ros2 /home/ros/ros2_ws/src/xvsdk-ros2
+COPY xvsdk-ros2 /home/${USERNAME}/ros2_ws/src/xvsdk-ros2
+
+ENV XDG_RUNTIME_DIR=/tmp/xdg_runtime_ros
+RUN mkdir -p /tmp/xdg_runtime_ros
 
 # Done

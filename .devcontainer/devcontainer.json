@@ -39,12 +39,12 @@
 
     "postCreateCommand": "bash -c ' \
         source /opt/ros/humble/setup.bash && \
-        mkdir -p ~/ros2_ws/src && \
-        ln -s /workspaces/xvisiotech/xvsdk-ros2 ~/ros2_ws/src/xvsdk-ros2 && \
+        cd ~/ros2_ws && \
         colcon build --symlink-install \
             --cmake-args \
             -DXVSDK_INCLUDE_DIRS=/usr/include/xvsdk \
-            -DXVSDK_LIBRARIES=/usr/lib/libxvsdk.so \
+            -DXVSDK_LIBRARIES=/usr/lib/libxvsdk.so && \
+        source ~/ros2_ws/install/setup.bash \
     '",
 
     // You can override the default shell; recommended for ROS2 usage
