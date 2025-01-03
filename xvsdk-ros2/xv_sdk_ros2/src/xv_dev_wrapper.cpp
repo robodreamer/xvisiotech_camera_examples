@@ -28,6 +28,8 @@ void xv_dev_wrapper::init(void)
 
     if(m_device->fisheyeCameras())
     {
+
+        m_fisheye_cameras = m_device->fisheyeCameras();
         initFisheyeCameras();
     }
 
@@ -184,7 +186,14 @@ void xv_dev_wrapper::initOrientationStream(void)
 
 void xv_dev_wrapper::initFisheyeCameras(void)
 {
+    if (!m_fisheye_cameras) {
+        std::cout << "No FisheyeCameras found." << std::endl;
+        return;
+    }
     getFECalibration();
+
+    // Start the cameras just once, and register the callback using the stored pointer
+    m_fisheye_cameras->start();
     registerFECallbackFunc();
 
     // NOTE: below are commented out from the manufacturer's code.
@@ -392,13 +401,11 @@ void xv_dev_wrapper::formatXvOriToRosOriStamped(xv_ros2_msgs::msg::OrientationSt
     rosOrientation.angular_velocity.z = xvOrientation.angularVelocity()[2];
 }
 
-bool xv_dev_wrapper::registerFECallbackFunc(void)
+void xv_dev_wrapper::registerFECallbackFunc(void)
 {
-    m_device->fisheyeCameras()->start();
-
-    // FIXME: it gets stuck here for some reason inside docker container.
-    m_device->fisheyeCameras()->registerCallback([this](const FisheyeImages & xvFisheyeImages)
+    m_fisheye_cameras->registerCallback([this](const FisheyeImages & xvFisheyeImages)
     {
+
         for (int i = 0; i < int(xvFisheyeImages.images.size()); ++i)
         {
             const auto& xvGrayImage = xvFisheyeImages.images[i];
