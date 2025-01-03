@@ -37,8 +37,6 @@ void xv_dev_wrapper::init(void)
         initSlam();
     }
 
-    // NOTE: XR-50 camera does not have TOF and RGB outputs.
-    /*
     if(m_device->tofCamera())
     {
         initTofCamera();
@@ -52,7 +50,6 @@ void xv_dev_wrapper::init(void)
     {
         this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: rgb is null");
     }
-    */
 }
 
 bool xv_dev_wrapper::startImuOri()
@@ -188,7 +185,7 @@ void xv_dev_wrapper::initOrientationStream(void)
 void xv_dev_wrapper::initFisheyeCameras(void)
 {
     getFECalibration();
-    // registerFECallbackFunc(); // NOTE: This function is not working inside docker container.
+    registerFECallbackFunc();
 
     // NOTE: below are commented out from the manufacturer's code.
     // registerFEAntiDistortionCallbackFunc();
@@ -398,7 +395,6 @@ void xv_dev_wrapper::formatXvOriToRosOriStamped(xv_ros2_msgs::msg::OrientationSt
 bool xv_dev_wrapper::registerFECallbackFunc(void)
 {
     m_device->fisheyeCameras()->start();
-    std::cout << "DEBUG -- Fisheye Cameras started" << std::endl;
 
     // FIXME: it gets stuck here for some reason inside docker container.
     m_device->fisheyeCameras()->registerCallback([this](const FisheyeImages & xvFisheyeImages)
@@ -418,9 +414,7 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
                 return;
             }
 
-            std::cout << "DEBUG -- Converting FishEye Camera Images to Ros Image" << std::endl;
             auto img = changeFEGrayScaleImage2RosImage(xvGrayImage, xvFisheyeImages.hostTimestamp, "");
-            std::cout << "DEBUG -- Fisheye Image converted to Ros Image" << std::endl;
 
             if (i == 0)
             {
@@ -443,8 +437,6 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
             }
         }
     });
-
-    std::cout << "DEBUG -- Registered FE Callback" << std::endl;
 }
 
 bool xv_dev_wrapper::registerFEAntiDistortionCallbackFunc(void)
