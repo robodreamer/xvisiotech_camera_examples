@@ -30,7 +30,7 @@
 #include "xv_ros2_msgs/msg/controller.hpp"
 #include "xv_ros2_msgs/msg/event_data.hpp"
 #include "xv_ros2_msgs/msg/button_msg.hpp"
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include "xv_dev_wrapper.h"
 using namespace xv;
 using rosImage = sensor_msgs::msg::Image;

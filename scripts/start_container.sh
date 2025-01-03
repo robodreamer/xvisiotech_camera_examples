@@ -1,6 +1,10 @@
 #!/bin/bash
 
-docker build -f .devcontainer/Dockerfile -t xvisio-cam-dev .
+docker build \
+  --file .devcontainer/Dockerfile \
+  --build-arg USER_UID=$(id -u) \
+  --build-arg USER_GID=$(id -g) \
+  -t xvisio-cam-dev .
 docker run --privileged -it --rm \
 		--mount type=bind,source=$(pwd),target=/workspaces/xvisio-cam -w /workspaces/xvisio-cam \
     --env="DISPLAY=$DISPLAY" \
