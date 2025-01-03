@@ -28,6 +28,8 @@ void xv_dev_wrapper::init(void)
 
     if(m_device->fisheyeCameras())
     {
+
+        m_fisheye_cameras = m_device->fisheyeCameras();
         initFisheyeCameras();
     }
 
@@ -37,8 +39,6 @@ void xv_dev_wrapper::init(void)
         initSlam();
     }
 
-    // NOTE: XR-50 camera does not have TOF and RGB outputs.
-    /*
     if(m_device->tofCamera())
     {
         initTofCamera();
@@ -52,7 +52,6 @@ void xv_dev_wrapper::init(void)
     {
         this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: rgb is null");
     }
-    */
 }
 
 bool xv_dev_wrapper::startImuOri()
@@ -187,8 +186,15 @@ void xv_dev_wrapper::initOrientationStream(void)
 
 void xv_dev_wrapper::initFisheyeCameras(void)
 {
+    if (!m_fisheye_cameras) {
+        std::cout << "No FisheyeCameras found." << std::endl;
+        return;
+    }
     getFECalibration();
-    // registerFECallbackFunc(); // NOTE: This function is not working inside docker container.
+
+    // Start the cameras just once, and register the callback using the stored pointer
+    m_fisheye_cameras->start();
+    registerFECallbackFunc();
 
     // NOTE: below are commented out from the manufacturer's code.
     // registerFEAntiDistortionCallbackFunc();
@@ -395,14 +401,11 @@ void xv_dev_wrapper::formatXvOriToRosOriStamped(xv_ros2_msgs::msg::OrientationSt
     rosOrientation.angular_velocity.z = xvOrientation.angularVelocity()[2];
 }
 
-bool xv_dev_wrapper::registerFECallbackFunc(void)
+void xv_dev_wrapper::registerFECallbackFunc(void)
 {
-    m_device->fisheyeCameras()->start();
-    std::cout << "DEBUG -- Fisheye Cameras started" << std::endl;
-
-    // FIXME: it gets stuck here for some reason inside docker container.
-    m_device->fisheyeCameras()->registerCallback([this](const FisheyeImages & xvFisheyeImages)
+    m_fisheye_cameras->registerCallback([this](const FisheyeImages & xvFisheyeImages)
     {
+
         for (int i = 0; i < int(xvFisheyeImages.images.size()); ++i)
         {
             const auto& xvGrayImage = xvFisheyeImages.images[i];
@@ -418,9 +421,7 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
                 return;
             }
 
-            std::cout << "DEBUG -- Converting FishEye Camera Images to Ros Image" << std::endl;
             auto img = changeFEGrayScaleImage2RosImage(xvGrayImage, xvFisheyeImages.hostTimestamp, "");
-            std::cout << "DEBUG -- Fisheye Image converted to Ros Image" << std::endl;
 
             if (i == 0)
             {
@@ -443,8 +444,6 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
             }
         }
     });
-
-    std::cout << "DEBUG -- Registered FE Callback" << std::endl;
 }
 
 bool xv_dev_wrapper::registerFEAntiDistortionCallbackFunc(void)
