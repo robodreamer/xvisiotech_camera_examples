@@ -53,8 +53,10 @@ Open a new shell in the container currently running the ROS2 node:
 
 You can listen to pose topic in the new shell:
 ```bash
-ros2 topic echo /xv_sdk/slam/pose
+ros2 topic echo /xv_sdk/<camera_serial_id>/pose
 ```
+<camera_serial_id> is the serial number of the camera that shows up in the topic list (e.g., `SNXR501G10002222006246`).
+
 
 You can also visualize the camera pose in RViz (in the new shell):
 ```bash
@@ -181,4 +183,6 @@ Andy Park <andypark.purdue@gmail.com>
 For more information on the XvisioTech cameras and their features, please refer to the official documentation:
 
 [https://www.xvisiotech.com/doc/](https://www.xvisiotech.com/doc/)
+
+[Purchasing Xvisio Camera Modules (XR-50, DS-80) on Mouser Electronics Website](https://www.mouser.com/c/optoelectronics/cameras-accessories/cameras-camera-modules/?m=Xvisio&product=Camera%20Modules&product%20type=AI%2C%20CV%2C%20VSLAM)
 

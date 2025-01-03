@@ -101,22 +101,32 @@ bool xv_dev_wrapper::getImuOriAt(xv_ros2_msgs::msg::OrientationStamped& oriStamp
 
 bool xv_dev_wrapper::start_slam(void)
 {
-    bool ret = false;
+    bool success = true;
     if(this->m_device->slam())
     {
-        ret = this->m_device->slam()->start();
+        success = this->m_device->slam()->start();
     }
-    return ret;
+    else
+    {
+        success = false;
+        this->m_node->printErrorMsg("slam is not available");
+    }
+    return success;
 }
 
 bool xv_dev_wrapper::stop_slam(void)
 {
-    bool ret = false;
+    bool success = true;
     if(this->m_device->slam())
     {
         this->m_device->slam()->stop();
     }
-    return false;
+    else
+    {
+        success = false;
+        this->m_node->printErrorMsg("slam is not available");
+    }
+    return success;
 }
 
 bool xv_dev_wrapper::slam_get_pose(geometry_msgs::msg::PoseStamped& poseSteamped, const builtin_interfaces::msg::Duration& prediction)
@@ -1256,13 +1266,13 @@ void xv_dev_wrapper::toRosColorDepthData(xv_ros2_msgs::msg::ColorDepth& colorDep
     {
         if (m_xvDepthImage.type == xv::DepthImage::Type::Depth_32) {
             const auto depth = reinterpret_cast<float const*>(m_xvDepthImage.data.get());
-            for(int i = 0; i < m_xvDepthImage.height*m_xvDepthImage.width; i++)
+            for(std::size_t i = 0; i < m_xvDepthImage.height*m_xvDepthImage.width; i++)
             {
                 colorDephData.depth.push_back(depth[i]);
             }
         } else if (m_xvDepthImage.type == xv::DepthImage::Type::Depth_16) {
             const auto depth = reinterpret_cast<short const*>(m_xvDepthImage.data.get());
-            for(int i = 0; i < m_xvDepthImage.height*m_xvDepthImage.width; i++)
+            for(std::size_t i = 0; i < m_xvDepthImage.height*m_xvDepthImage.width; i++)
             {
                 colorDephData.depth.push_back((float)depth[i]/1000);
             }
@@ -1331,6 +1341,8 @@ xv_ros2_msgs::msg::Controller xv_dev_wrapper::toRosControllerData(const Wireless
     controllerData.rockerx = data.rocker_x;
     controllerData.rockery = data.rocker_y;
     controllerData.key = data.key;
+
+    return controllerData;
 }
 
 bool xv_dev_wrapper::startController(std::string portAddress)

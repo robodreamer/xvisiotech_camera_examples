@@ -33,10 +33,10 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     auto imuSensor_startOri_callBack =[this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
-        bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->startImuOri() : false;
-        res->success = ret;
-        res->message = ret ? "successed" : "failed";
-        return ret;
+        bool success = m_deviceMap[sn] ? m_deviceMap[sn]->startImuOri() : false;
+        res->success = success;
+        res->message = success ? "successed" : "failed";
+        return success;
     };
     std::string oriStart = "xv_sdk/SN" + sn +"/start_orientation";
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr startOrienSrv;
@@ -46,10 +46,10 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     auto imuSensor_stopOri_callBack =[this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
-        bool ret =  m_deviceMap[sn] ? m_deviceMap[sn]->stopImuOri() : false;
-        res->success = ret;
-        res->message = ret ? "successed" : "failed";
-        return ret;
+        bool success =  m_deviceMap[sn] ? m_deviceMap[sn]->stopImuOri() : false;
+        res->success = success;
+        res->message = success ? "successed" : "failed";
+        return success;
     };
     std::string oriStop = "xv_sdk/SN" + sn +"/stop_orientation";
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stopOrienSrv;
@@ -119,10 +119,10 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     auto slam_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
-        bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->start_slam() : false;
-        res->success = ret;
-        res->message = ret ? "successed" : "failed";
-        return ret;
+        bool success = m_deviceMap[sn] ? m_deviceMap[sn]->start_slam() : false;
+        res->success = success;
+        res->message = success ? "successed" : "failed";
+        return success;
     };
     std::string startSlam = "xv_sdk/SN" + sn +"/start_slam";
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr slamStart;
@@ -132,10 +132,10 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     auto slam_stop_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
-        bool ret = m_deviceMap[sn] ?m_deviceMap[sn]->stop_slam() : false;
-        res->success = ret;
-        res->message = ret ? "successed" : "failed";
-        return ret;
+        bool success = m_deviceMap[sn] ?m_deviceMap[sn]->stop_slam() : false;
+        res->success = success;
+        res->message = success ? "successed" : "failed";
+        return success;
     };
     std::string stopSlam = "xv_sdk/SN" + sn +"/stop_slam";
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr slamStop;
@@ -145,8 +145,8 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     auto slam_get_pose_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetPose::Request> req,
                                         std::shared_ptr<xv_ros2_msgs::srv::GetPose::Response> res) -> bool
     {
-        bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->slam_get_pose(res->pose, req->prediction) : false;
-        return ret;
+        bool success = m_deviceMap[sn] ? m_deviceMap[sn]->slam_get_pose(res->pose, req->prediction) : false;
+        return success;
     };
 
     std::string getPose = "xv_sdk/SN" + sn +"/get_pose";
@@ -157,8 +157,8 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     auto slam_get_pose_at_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetPoseAt::Request> req,
                                         std::shared_ptr<xv_ros2_msgs::srv::GetPoseAt::Response> res) -> bool
     {
-        bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->slam_get_pose_at(res->pose, req->timestamp) : false;
-        return ret;
+        bool success = m_deviceMap[sn] ? m_deviceMap[sn]->slam_get_pose_at(res->pose, req->timestamp) : false;
+        return success;
     };
     std::string getPoseAt = "xv_sdk/SN" + sn +"/get_pose_at";
     rclcpp::Service<xv_ros2_msgs::srv::GetPoseAt>::SharedPtr slamGetPoseAt;
@@ -184,10 +184,10 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // auto tof_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
     //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     // {
-    //     bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->start_tof() : false;
-    //     res->success = ret;
-    //     res->message = ret ? "successed" : "failed";
-    //     return ret;
+    //     bool success = m_deviceMap[sn] ? m_deviceMap[sn]->start_tof() : false;
+    //     res->success = success;
+    //     res->message = success ? "successed" : "failed";
+    //     return success;
     // };
     // std::string startTOF = "xv_sdk/SN" + sn +"/start_tof";
     // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr tofStart;
@@ -197,10 +197,10 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // auto tof_stop_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
     //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     // {
-    //     bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->stop_tof() : false;
-    //     res->success = ret;
-    //     res->message = ret ? "successed" : "failed";
-    //     return ret;
+    //     bool success = m_deviceMap[sn] ? m_deviceMap[sn]->stop_tof() : false;
+    //     res->success = success;
+    //     res->message = success ? "successed" : "failed";
+    //     return success;
     // };
     // std::string stopTOF = "xv_sdk/SN" + sn +"/stop_tof";
     // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr tofStop;
@@ -221,10 +221,10 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // auto rgb_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
     //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     // {
-    //     bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->start_rgb() : false;
-    //     res->success = ret;
-    //     res->message = ret ? "successed" : "failed";
-    //     return ret;
+    //     bool success = m_deviceMap[sn] ? m_deviceMap[sn]->start_rgb() : false;
+    //     res->success = success;
+    //     res->message = success ? "successed" : "failed";
+    //     return success;
     // };
     // std::string startRGB = "xv_sdk/SN" + sn +"/start_rgb";
     // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr rgbStartSrv;
@@ -234,10 +234,10 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // auto rgb_stop_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
     //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     // {
-    //     bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->stop_rgb() : false;
-    //     res->success = ret;
-    //     res->message = ret ? "successed" : "failed";
-    //     return ret;
+    //     bool success = m_deviceMap[sn] ? m_deviceMap[sn]->stop_rgb() : false;
+    //     res->success = success;
+    //     res->message = success ? "successed" : "failed";
+    //     return success;
     // };
     // std::string stopRGB = "xv_sdk/SN" + sn +"/stop_rgb";
     // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr rgbStopSrv;
@@ -301,8 +301,8 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     auto cslam_savemap_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::SaveMapAndSwitchCslam::Request> req,
                                         std::shared_ptr<xv_ros2_msgs::srv::SaveMapAndSwitchCslam::Response> res) -> bool
     {
-        bool ret = m_deviceMap[sn]->saveCslamMap(req->filename);
-        if(ret)
+        bool success = m_deviceMap[sn]->saveCslamMap(req->filename);
+        if(success)
         {
             res->success = true;
             res->message = "save map file ok";
@@ -312,7 +312,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
             res->success = false;
             res->message = "could not save map file";
         }
-        return ret;
+        return success;
     };
     std::string cslamSave = "xv_sdk/SN" + sn +"/cslam_save_map";
     rclcpp::Service<xv_ros2_msgs::srv::SaveMapAndSwitchCslam>::SharedPtr saveMapSrv;
@@ -322,8 +322,8 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     auto cslam_loadmap_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::LoadMapAndSwitchCslam::Request> req,
                                         std::shared_ptr<xv_ros2_msgs::srv::LoadMapAndSwitchCslam::Response> res) -> bool
     {
-        bool ret = m_deviceMap[sn]->loadCslamMap(req->filename);
-        if(ret)
+        bool success = m_deviceMap[sn]->loadCslamMap(req->filename);
+        if(success)
         {
             res->success = true;
             res->message = "load map file ok";
@@ -333,7 +333,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
             res->success = false;
             res->message = "could not load map file";
         }
-        return ret;
+        return success;
     };
     std::string cslamLoad = "xv_sdk/SN" + sn +"/cslam_load_map";
     rclcpp::Service<xv_ros2_msgs::srv::LoadMapAndSwitchCslam>::SharedPtr loadMapSrv;
@@ -382,8 +382,8 @@ void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
     //                                     std::shared_ptr<xv_ros2_msgs::srv::ControllerStart::Response> res) -> bool
     // {
     //     std::cout << "port address: " << req->portaddress << std::endl;
-    //     bool ret = m_controllerMap[sn]->startController(req->portaddress);
-    //     if(ret)
+    //     bool success = m_controllerMap[sn]->startController(req->portaddress);
+    //     if(success)
     //     {
     //         res->success = true;
     //         res->message = "start controller ok";
@@ -393,7 +393,7 @@ void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
     //         res->success = false;
     //         res->message = "could not start controller";
     //     }
-    //     return ret;
+    //     return success;
     // };
     // std::string controllerStart = "xv_sdk/SN" + sn +"/controller_start";
     // rclcpp::Service<xv_ros2_msgs::srv::ControllerStart>::SharedPtr startControllerSrv;
@@ -403,8 +403,8 @@ void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
     // auto controller_stop_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::ControllerStop::Request> /*req*/,
     //                                     std::shared_ptr<xv_ros2_msgs::srv::ControllerStop::Response> res) -> bool
     // {
-    //     bool ret = m_controllerMap[sn]->stopController();
-    //     if(ret)
+    //     bool success = m_controllerMap[sn]->stopController();
+    //     if(success)
     //     {
     //         res->success = true;
     //         res->message = "stop controller ok";
@@ -414,7 +414,7 @@ void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
     //         res->success = false;
     //         res->message = "could not stop controller";
     //     }
-    //     return ret;
+    //     return success;
     // };
     // std::string controllerStop = "xv_sdk/SN" + sn +"/controller_stop";
     // rclcpp::Service<xv_ros2_msgs::srv::ControllerStop>::SharedPtr stopControllerSrv;
@@ -472,8 +472,8 @@ void xvision_ros2_node::get_frameId_parameters(void)
                                         "controller_port"};
     for(auto &param_name : paramNames)
     {
-        bool ret = this->get_parameter_or(param_name, frmaId_param, rclcpp::Parameter(param_name, param_name));
-        if(!ret)
+        bool success = this->get_parameter_or(param_name, frmaId_param, rclcpp::Parameter(param_name, param_name));
+        if(!success)
         {
             printInfoMsg("get parameter is fail" + param_name);
             continue;
@@ -491,8 +491,8 @@ void xvision_ros2_node::get_device_config_parameters(void)
     bool configState = false;
     for(auto &config_name : m_deviceConfig)
     {
-        bool ret = this->get_parameter_or(config_name.first, configState, config_name.second);
-        if(!ret)
+        bool success = this->get_parameter_or(config_name.first, configState, config_name.second);
+        if(!success)
         {
             printErrorMsg("Launch file has no " + config_name.first + " parameter");
             continue;

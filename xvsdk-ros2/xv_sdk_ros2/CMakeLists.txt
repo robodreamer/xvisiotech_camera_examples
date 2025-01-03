@@ -28,6 +28,8 @@ find_package(image_transport REQUIRED)
 find_package(OpenCV REQUIRED)
 
 # find xvisio sdk
+set(XVSDK_INCLUDE_DIRS "/usr/include/xvsdk")
+set(XVSDK_LIBRARIES "/usr/lib/libxvsdk.so")
 if (XVSDK_INCLUDE_DIRS AND XVSDK_LIBRARIES)
   set(XVSDK_FOUND TRUE)
 else()
@@ -52,6 +54,8 @@ include_directories(
   /usr/include2/
 )
 
+add_compile_options(-Wno-pedantic)
+
 add_executable(xv_cameras src/main.cpp src/xv_ros2_node.cpp src/xv_dev_wrapper.cpp)
 target_link_libraries(xv_cameras ${XVSDK_LIBRARIES} pthread ${OpenCV_LIBS})
 target_include_directories(xv_cameras PUBLIC
@@ -59,14 +63,14 @@ target_include_directories(xv_cameras PUBLIC
   $<INSTALL_INTERFACE:include>)
 target_compile_features(xv_cameras PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
-ament_target_dependencies(xv_cameras 
-  rclcpp 
-  std_msgs 
-  sensor_msgs 
-  xv_ros2_msgs 
-  std_srvs 
-  builtin_interfaces 
-  geometry_msgs 
+ament_target_dependencies(xv_cameras
+  rclcpp
+  std_msgs
+  sensor_msgs
+  xv_ros2_msgs
+  std_srvs
+  builtin_interfaces
+  geometry_msgs
   nav_msgs
   tf2
   tf2_ros
