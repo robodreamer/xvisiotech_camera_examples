@@ -8,6 +8,20 @@ This repository contains the driver and examples for using [XvisioTech](https://
 
 Before proceeding with the installation, ensure you have Docker installed on your system. If you don't have Docker installed, you can follow the instructions provided on [the official Docker website](https://docs.docker.com/engine/install/).
 
+#### Docker Setup:
+
+If you haven't done this before, add the user to the docker group:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Log out and log back in for the group change to take effect. Alternatively, run:
+
+```bash
+newgrp docker
+```
+
 Note that to be able to run examples with GUIs, make sure graphics forwarding (x11) is enabled in your docker settings.
 ```bash
 xhost +local:docker
