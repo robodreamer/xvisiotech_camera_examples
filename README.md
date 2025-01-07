@@ -6,7 +6,7 @@ This repository contains the driver and examples for using [XvisioTech](https://
 
 ### Prerequisites
 
-Before proceeding with the installation, ensure you have Docker installed on your system. If you don't have Docker installed, you can follow the instructions provided on [the official Docker website](https://docs.docker.com/engine/install/).
+Before proceeding with the installation, ensure you have Docker installed on your system. If you don't have Docker installed, you can follow the instructions provided on [the official Docker website](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository).
 
 #### Docker Setup:
 
