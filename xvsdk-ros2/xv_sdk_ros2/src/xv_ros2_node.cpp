@@ -354,6 +354,16 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher2;
     m_buttonPublisher2.emplace(sn, buttonPublisher2);
     m_buttonPublisher2[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName2.c_str(),1);
+
+    std::string buttonName3 = "xv_sdk/SN" + sn +"/button3";
+    rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher3;
+    m_buttonPublisher3.emplace(sn, buttonPublisher3);
+    m_buttonPublisher3[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName3.c_str(),1);
+
+    std::string buttonName4 = "xv_sdk/SN" + sn +"/button4";
+    rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher4;
+    m_buttonPublisher4.emplace(sn, buttonPublisher4);
+    m_buttonPublisher4[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName4.c_str(),1);
 }
 
 void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
@@ -810,6 +820,18 @@ void xvision_ros2_node::publishButton(std::string sn, int buttonType, const xv_r
             if(m_buttonPublisher2[sn])
             {
                 m_buttonPublisher2[sn]->publish(buttonMsg);
+            }
+            break;
+        case 3:
+            if(m_buttonPublisher3[sn])
+            {
+                m_buttonPublisher3[sn]->publish(buttonMsg);
+            }
+            break;
+        case 4:
+            if(m_buttonPublisher4[sn])
+            {
+                m_buttonPublisher4[sn]->publish(buttonMsg);
             }
             break;
     }

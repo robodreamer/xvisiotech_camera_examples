@@ -144,6 +144,8 @@ private:
 
     std::map<std::string, rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr> m_buttonPublisher1;
     std::map<std::string, rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr> m_buttonPublisher2;
+    std::map<std::string, rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr> m_buttonPublisher3;
+    std::map<std::string, rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr> m_buttonPublisher4;
 
     size_t count_;
     std::thread m_watchDevThread, m_watchControllerThread;
