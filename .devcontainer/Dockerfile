@@ -45,7 +45,7 @@ COPY ubuntu-drivers/99-xvisio.rules /etc/udev/rules.d/99-xvisio.rules
 # done, no need for udevadm control --reload-rules
 
 # Install the XVSDK_jammy_amd64.deb driver with the specified version date:
-ARG DRIVER_DATE=123124
+ARG DRIVER_DATE=20250109
 COPY ubuntu-drivers/XVSDK_jammy_amd64_${DRIVER_DATE}.deb /tmp/
 RUN dpkg -i /tmp/XVSDK_jammy_amd64_${DRIVER_DATE}.deb || apt-get -f install -y
 
