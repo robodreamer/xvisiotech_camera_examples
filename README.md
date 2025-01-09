@@ -6,7 +6,7 @@ This repository contains the driver and examples for using [XvisioTech](https://
 
 ### Prerequisites
 
-Before proceeding with the installation, ensure you have Docker installed on your system. If you don't have Docker installed, you can follow the instructions provided on [the official Docker website](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository).
+Before proceeding with the installation, ensure you have Docker installed on your system. If you don't have Docker installed, you can follow the instructions provided on [the official Docker website](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository). Make sure to use `apt-get` to install it, instead of `docker-desktop` GUI app installation, as it may not work with the provided scripts.
 
 #### Docker Setup:
 
@@ -22,7 +22,7 @@ Log out and log back in for the group change to take effect. Alternatively, run:
 newgrp docker
 ```
 
-Note that to be able to run examples with GUIs, make sure graphics forwarding (x11) is enabled in your docker settings.
+Note that to be able to run examples with GUIs, make sure graphics forwarding (x11) is enabled in your docker settings. We have added this in the provided scripts for convenience, but you may need to enable it manually if you are using a different setup.
 ```bash
 xhost +local:docker
 ```
@@ -50,6 +50,7 @@ To set up the ROS2 package for the XvisioTech camera, follow these steps in the 
 ```bash
 source ./scripts/setup_ros2_driver.sh
 ```
+Make sure to `source` the script to set up the ROS2 package in the current shell. Just running the script without `source` will not set up the ROS2 package in the current shell.
 
 ### Usage
 

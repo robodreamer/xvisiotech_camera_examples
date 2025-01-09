@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Allow container to connect to X server
+xhost +local:docker
+
+# Build and run the container
 docker build \
   --file .devcontainer/Dockerfile \
   --build-arg USER_UID=$(id -u) \
