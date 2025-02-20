@@ -13,11 +13,10 @@ ARG USERNAME=ros
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-
-# Create the user, disable password, and give sudo
 RUN apt-get update && apt-get install -y sudo \
     && groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && usermod -aG users,plugdev $USERNAME \
     && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 USER root
@@ -30,7 +29,8 @@ RUN apt-get update && apt-get install -y \
     git wget curl nano usbutils \
     libgtk-3-dev x11-apps \
     ros-${ROS_DISTRO}-image-transport ros-${ROS_DISTRO}-rviz2 \
-    libsuitesparse-dev
+    libsuitesparse-dev \
+    dfu-util
 
 # (Optional) If you have other tools or dependencies, add them here.
 

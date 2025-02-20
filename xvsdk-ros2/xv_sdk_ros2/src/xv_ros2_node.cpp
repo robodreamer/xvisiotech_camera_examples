@@ -520,6 +520,11 @@ void xvision_ros2_node::printInfoMsg(const std::string msgString) const
     RCLCPP_INFO(this->get_logger(), "xv_sdk: '%s'", msgString.c_str());
 }
 
+void xvision_ros2_node::printWarningMsg(const std::string msgString) const
+{
+    RCLCPP_WARN(this->get_logger(), "xv_sdk: '%s'", msgString.c_str());
+}
+
 void xvision_ros2_node::printErrorMsg(const std::string msgString) const
 {
     RCLCPP_ERROR(this->get_logger(), "xv_sdk: '%s'", msgString.c_str());

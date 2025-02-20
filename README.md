@@ -82,7 +82,7 @@ rviz2 -d ./xvisio-camera-test.rviz
 
 If you just received the camera, you may need to update the firmware to the latest version.
 
-To update the camera firmware, use the latest firmware image file in the `firmware` folder and run the following command (choose the correct firmware file for your camera model):
+To update the camera firmware, use the latest firmware image file in the `firmware` folder and run the following command inside the container shell (choose the correct firmware file for your camera model):
 ```
 ./xvisioUpdateImg <firmware_file>
 ```

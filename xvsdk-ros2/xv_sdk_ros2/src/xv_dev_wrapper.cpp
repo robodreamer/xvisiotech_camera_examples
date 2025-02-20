@@ -190,11 +190,6 @@ void xv_dev_wrapper::initOrientationStream(void)
     {
         if (xvOrientation.hostTimestamp < 0)
         {
-            this->m_node->printErrorMsg(std::string("XVSDK-ROS-WRAPPER Warning: negative Orientation host-timestamp"));
-            return;
-        }
-        if (xvOrientation.hostTimestamp < 0)
-        {
             this->m_node->printErrorMsg(std::string("XVSDK-ROS-WRAPPER toRosOrientationStamped() Error: negative Orientation host-timestamp"));
         }
         xv_ros2_msgs::msg::OrientationStamped orientationStamped;
@@ -390,24 +385,27 @@ void xv_dev_wrapper::initEvent()
 
 void xv_dev_wrapper::toRosEventStamped(xv_ros2_msgs::msg::EventData& event, xv::Event const& xvEvent, const std::string& frame_id)
 {
-  if (xvEvent.hostTimestamp < 0)
-    this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER toRosEventStamped() Error: negative Orientation host-timestamp");
+    if (xvEvent.hostTimestamp < 0) {
+        this->m_node->printWarningMsg("XVSDK-ROS-WRAPPER toRosEventStamped() Warning: negative host-timestamp: " + std::to_string(xvEvent.hostTimestamp));
+    }
 
-  event.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
-  event.header.frame_id = frame_id;
+    event.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
+    event.header.frame_id = frame_id;
 
-  event.type = xvEvent.type;
-  event.state = xvEvent.state;
+    event.type = xvEvent.type;
+    event.state = xvEvent.state;
 }
 
 void xv_dev_wrapper::toRosButtonStamped(xv_ros2_msgs::msg::ButtonMsg& button, xv::Event const& xvEvent, const std::string& frame_id)
 {
-  if (xvEvent.hostTimestamp < 0)
-    this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER toRosButtonStamped() Error: negative Orientation host-timestamp");
+    // TODO: remove this after debugging host timestamp issue
+    // this->m_node->printInfoMsg("host timestamp: " + std::to_string(xvEvent.hostTimestamp));
+    if (xvEvent.hostTimestamp < 0)
+        this->m_node->printWarningMsg("XVSDK-ROS-WRAPPER toRosButtonStamped() Warning: negative host-timestamp: " + std::to_string(xvEvent.hostTimestamp));
 
-  button.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
-  button.header.frame_id = frame_id;
-  button.state = (bool)xvEvent.state;
+    button.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
+    button.header.frame_id = frame_id;
+    button.state = (bool)xvEvent.state;
 }
 
 sensor_msgs::msg::CameraInfo xv_dev_wrapper::toRosCameraInfo(const xv::UnifiedCameraModel* const ucm,

@@ -45,6 +45,7 @@ public:
     void get_frameId_parameters(void);
     void get_device_config_parameters(void);
     void printInfoMsg(const std::string msgString) const;
+    void printWarningMsg(const std::string msgString) const;
     void printErrorMsg(const std::string msgString) const;
     void publishImu(std::string sn, const sensor_msgs::msg::Imu &imuMsg);
     void publisheOrientation(std::string sn, const xv_ros2_msgs::msg::OrientationStamped& orientationMsg);
