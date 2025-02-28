@@ -30,7 +30,7 @@
 #include "xv_ros2_msgs/msg/controller.hpp"
 #include "xv_ros2_msgs/msg/event_data.hpp"
 #include "xv_ros2_msgs/msg/button_msg.hpp"
-#include <image_transport/image_transport.hpp>
+#include <image_transport/image_transport.h>
 #include "xv_dev_wrapper.h"
 using namespace xv;
 using rosImage = sensor_msgs::msg::Image;
@@ -45,7 +45,6 @@ public:
     void get_frameId_parameters(void);
     void get_device_config_parameters(void);
     void printInfoMsg(const std::string msgString) const;
-    void printWarningMsg(const std::string msgString) const;
     void printErrorMsg(const std::string msgString) const;
     void publishImu(std::string sn, const sensor_msgs::msg::Imu &imuMsg);
     void publisheOrientation(std::string sn, const xv_ros2_msgs::msg::OrientationStamped& orientationMsg);
@@ -67,8 +66,8 @@ public:
     void publishRightControllerPose(std::string sn, const geometry_msgs::msg::PoseStamped& pose);
     void publishLeftControllerData(std::string sn, const xv_ros2_msgs::msg::Controller& controllerMsg);
     void publishRightControllerData(std::string sn, const xv_ros2_msgs::msg::Controller& controllerMsg);
-    void publishEvent(std::string sn, const xv_ros2_msgs::msg::EventData& eventMsg);
-    void publishButton(std::string sn, int buttonType, const xv_ros2_msgs::msg::ButtonMsg& buttonMsg);
+    void publisheEvent(std::string sn, const xv_ros2_msgs::msg::EventData& eventMsg);
+    void publisheButton(std::string sn, int buttonType, const xv_ros2_msgs::msg::ButtonMsg& buttonMsg);
 
 private:
     void watchDevices(void);
@@ -77,14 +76,14 @@ private:
 private:
     // imu publisher and service.
     std::map<std::string, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> m_imuPublisher;
-
+    
     // orientationStream publisher and service.
     std::map<std::string, rclcpp::Publisher<xv_ros2_msgs::msg::OrientationStamped>::SharedPtr> m_orientationPublisher;
     std::map<std::string, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr> m_service_imuSensor_startOri;
     std::map<std::string, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr> m_service_imuSensor_stopOri;
     std::map<std::string, rclcpp::Service<xv_ros2_msgs::srv::GetOrientation>::SharedPtr> m_service_imuSensor_getOri;
     std::map<std::string, rclcpp::Service<xv_ros2_msgs::srv::GetOrientationAt>::SharedPtr> m_service_imuSensor_getOriAt;
-
+    
     // FE publisher and service.
     std::map<std::string, image_transport::Publisher>  m_fisheyeImageLeftPublisher;
     std::map<std::string, image_transport::Publisher>  m_fisheyeImageRightPublisher;
@@ -106,7 +105,7 @@ private:
 
     //tf2 static transform broadcaster
     std::shared_ptr<tf2_ros::StaticTransformBroadcaster> m_static_tf_broadcaster;
-
+    
     //tof publisher and service.
     std::map<std::string, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr> m_service_tof_start;
     std::map<std::string, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr> m_service_tof_stop;
