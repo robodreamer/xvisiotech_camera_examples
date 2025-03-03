@@ -37,7 +37,7 @@ void xv_dev_wrapper::init(void)
             initFisheyeCameras();
         }
 
-        //TODO detect plane 
+        //TODO detect plane
         if (m_device->slam())
         {
             initSlam();
@@ -275,7 +275,7 @@ void xv_dev_wrapper::initTofCamera()
         sensor_msgs::msg::Image img = toRosImage(xvDepthImage, this->m_node->getFrameID("tof_optical_frame"));
         this->m_tofCameraInfo.header.frame_id = img.header.frame_id;
         this->m_tofCameraInfo.header.stamp = img.header.stamp;
-        
+
         this->m_node->publishTofCameraImage(m_sn, img, m_tofCameraInfo);
     });
     this->m_node->printInfoMsg("tof start");
@@ -510,7 +510,7 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
         for (int i = 0; i < int(xvFisheyeImages.images.size()); ++i)
         {
             const auto& xvGrayImage = xvFisheyeImages.images[i];
-            
+
             if (!xvGrayImage.data)
             {
                 this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: no FisheyeImages data");
@@ -521,7 +521,7 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
                 this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: negative FisheyeImages host-timestamp");
                 return;
             }
-            
+
             auto img = changeFEGrayScaleImage2RosImage(xvGrayImage, xvFisheyeImages.hostTimestamp, "");
 
             if (i == 0)
@@ -554,7 +554,7 @@ bool xv_dev_wrapper::registerFEAntiDistortionCallbackFunc(void)
     //     for (int i = 0; i < int(xvFisheyeImages.images.size()); ++i)
     //     {
     //         const auto& xvGrayImage = xvFisheyeImages.images[i];
-            
+
     //         if (!xvGrayImage.data)
     //         {
     //             this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: no FisheyeImages data");
@@ -565,7 +565,7 @@ bool xv_dev_wrapper::registerFEAntiDistortionCallbackFunc(void)
     //             this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: negative FisheyeImages host-timestamp");
     //             return;
     //         }
-            
+
     //         auto img = changeFEGrayScaleImage2RosImage(xvGrayImage, xvFisheyeImages.hostTimestamp, "");
 
     //         if (i == 0)
@@ -635,7 +635,7 @@ bool xv_dev_wrapper::registerSGBMCallbackFunc(void)
                 this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: negative SgbmImage host-timestamp");
                 return;
             }
-        
+
             auto img = toRosImage(xvSgbmImage, this->m_node->getFrameID("sgbm_frame"));
             auto imgRaw = sgbmRawDepthtoRosImage(xvSgbmImage, this->m_node->getFrameID("sgbm_raw_frame"));
 
@@ -712,12 +712,12 @@ void xv_dev_wrapper::getFECalibration()
 
 double xv_dev_wrapper::get_sec(const builtin_interfaces::msg::Duration& prediction) const
 {
-     return (double)prediction.sec + 1e-9*(double)prediction.nanosec; 
+     return (double)prediction.sec + 1e-9*(double)prediction.nanosec;
 }
 
 double xv_dev_wrapper::get_sec(const builtin_interfaces::msg::Time& timestamp)const
 {
-    return (double)timestamp.sec + 1e-9*(double)timestamp.nanosec; 
+    return (double)timestamp.sec + 1e-9*(double)timestamp.nanosec;
 }
 
 geometry_msgs::msg::PoseStamped xv_dev_wrapper::to_ros_poseStamped(const Pose& xvPose, const std::string& frame_id)
@@ -734,9 +734,9 @@ geometry_msgs::msg::PoseStamped xv_dev_wrapper::to_ros_poseStamped(const Pose& x
         ps.header.stamp = get_stamp_from_sec(currentTimestamp);
         old_timeStamp = currentTimestamp;
     }
-    catch(std::runtime_error& ex) 
+    catch(std::runtime_error& ex)
     {
-        ps.header.stamp = get_stamp_from_sec(old_timeStamp); 
+        ps.header.stamp = get_stamp_from_sec(old_timeStamp);
     }
     ps.header.frame_id = frame_id;
 
@@ -767,9 +767,9 @@ geometry_msgs::msg::PoseStamped xv_dev_wrapper::to_ros_poseEdgeStamped(const Pos
         ps.header.stamp = get_stamp_from_microsec(currentTimestamp);
         old_timeStamp = currentTimestamp;
     }
-    catch(std::runtime_error& ex) 
+    catch(std::runtime_error& ex)
     {
-        ps.header.stamp = get_stamp_from_microsec(old_timeStamp); 
+        ps.header.stamp = get_stamp_from_microsec(old_timeStamp);
     }
     ps.header.frame_id = frame_id;
 
@@ -827,7 +827,7 @@ nav_msgs::msg::Path xv_dev_wrapper::toRosPoseStampedRetNavmsgs(const Pose& xvPos
     {
         this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER toRosPoseStamped() Error: negative Pose host-timestamp");
     }
-  
+
     geometry_msgs::msg::PoseStamped this_ps;
     this_ps.header.frame_id = frame_id;
     this_ps.header.stamp = get_stamp_from_sec(xvPose.hostTimestamp() > 0.1 ? xvPose.hostTimestamp() : 0.1);
@@ -840,7 +840,7 @@ nav_msgs::msg::Path xv_dev_wrapper::toRosPoseStampedRetNavmsgs(const Pose& xvPos
     this_ps.pose.orientation.y = quat[1];
     this_ps.pose.orientation.z = quat[2];
     this_ps.pose.orientation.w = quat[3];
-    
+
     path.poses.push_back(this_ps);
 
     return path;
@@ -854,16 +854,16 @@ geometry_msgs::msg::TransformStamped xv_dev_wrapper::toRosTransformStamped(const
     {
         this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER toRosTransformStamped() Error: negative Pose host-timestamp");
     }
-    
+
     try
     {
       double currentTimestamp = pose.hostTimestamp() > 0.1 ? pose.hostTimestamp() : 0.1;
       tf.header.stamp = get_stamp_from_sec(currentTimestamp);
       old_timeStamp = currentTimestamp;
     }
-    catch(std::runtime_error& ex) 
+    catch(std::runtime_error& ex)
     {
-        tf.header.stamp = get_stamp_from_sec(old_timeStamp);    
+        tf.header.stamp = get_stamp_from_sec(old_timeStamp);
     }
     tf.header.frame_id = parent_frame_id;
     tf.child_frame_id = frame_id;
@@ -877,7 +877,7 @@ geometry_msgs::msg::TransformStamped xv_dev_wrapper::toRosTransformStamped(const
     tf.transform.rotation.y = quat[1];
     tf.transform.rotation.z = quat[2];
     tf.transform.rotation.w = quat[3];
-    
+
     return tf;
 }
 
@@ -931,7 +931,7 @@ sensor_msgs::msg::Image xv_dev_wrapper::toRosImage(const ColorImage& xvColorImag
 {
   if (xvColorImage.hostTimestamp < 0)
     this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER toRosImage() Error: negative ColorImage host-timestamp");
-    
+
   sensor_msgs::msg::Image rosImage;
   rosImage.header.stamp = get_stamp_from_sec(xvColorImage.hostTimestamp > 0.1 ? xvColorImage.hostTimestamp : 0.1);
   rosImage.header.frame_id = frame_id;
@@ -1088,18 +1088,18 @@ sensor_msgs::msg::Image xv_dev_wrapper::sgbmRawDepthtoRosImage(const SgbmImage& 
     {
         rosImage.header.stamp = get_stamp_from_sec(xvSgbmDepthImage.hostTimestamp > 0.1 ? xvSgbmDepthImage.hostTimestamp : 0.1);
         rosImage.header.frame_id = frame_id;
-        
+
         rosImage.height = xvSgbmDepthImage.height;
-        
+
         rosImage.width = xvSgbmDepthImage.width;
-        
+
         rosImage.encoding = sensor_msgs::image_encodings::TYPE_16UC1;
         rosImage.is_bigendian = false;
-    
-        rosImage.step = rosImage.width * sizeof(uint16_t); 
-    
+
+        rosImage.step = rosImage.width * sizeof(uint16_t);
+
         const int nbPx = rosImage.width * rosImage.height;
-        
+
         std::vector<uint8_t> copy(2*nbPx);
         std::shared_ptr<const xv::SgbmImage> ptr_sgbm = std::make_shared<xv::SgbmImage>(xvSgbmDepthImage);
         // std::memcpy(&copy[0], xvSgbmDepthImage.data.get(), nbPx * sizeof(uint16_t));
@@ -1182,7 +1182,7 @@ sensor_msgs::msg::Image xv_dev_wrapper::toRosImage(const DepthColorImage& xvDept
 {
     if (xvDepthColorImage.hostTimestamp < 0)
         std::cerr << "XVSDK-ROS-WRAPPER toRosImage() Error: negative DepthColorImage host-timestamp" << std::endl;
-        
+
     sensor_msgs::msg::Image rosImage;
     rosImage.header.stamp = get_stamp_from_sec(xvDepthColorImage.hostTimestamp > 0.1 ? xvDepthColorImage.hostTimestamp : 0.1);
     rosImage.header.frame_id = frame_id;
@@ -1207,7 +1207,7 @@ sensor_msgs::msg::Image xv_dev_wrapper::toRosImageRaw(const DepthColorImage& xvD
 {
     if (xvDepthColorImage.hostTimestamp < 0)
         std::cerr << "XVSDK-ROS-WRAPPER toRosImageRaw() Error: negative DepthColorImage host-timestamp" << std::endl;
-        
+
     sensor_msgs::msg::Image rosImage;
     rosImage.header.stamp = get_stamp_from_sec(xvDepthColorImage.hostTimestamp > 0.1 ? xvDepthColorImage.hostTimestamp : 0.1);
     rosImage.header.frame_id = frame_id;
@@ -1297,7 +1297,7 @@ void xv_dev_wrapper::toRosColorDepthData(xv_ros2_msgs::msg::ColorDepth& colorDep
     {
         cv::Mat cvMat = toCvMatRGB(m_xvColorImage);
         colorDephData.rgb = std::vector<unsigned char>(cvMat.data, cvMat.data + m_xvColorImage.height * m_xvColorImage.width * 3 * sizeof(uint8_t));    }
-    
+
     if(m_xvDepthImage.data)
     {
         if (m_xvDepthImage.type == xv::DepthImage::Type::Depth_32) {
@@ -1363,7 +1363,7 @@ bool xv_dev_wrapper::loadCslamMap(std::string filename)
         return false;
     }
     return m_device->slam()->loadMapAndSwitchToCslam(mapStream, cslamSwitchedCallback, cslamLocalizedCallback);
-    
+
 }
 
 xv_ros2_msgs::msg::Controller xv_dev_wrapper::toRosControllerData(const WirelessControllerData data, const std::string& frame_id)
@@ -1390,25 +1390,64 @@ bool xv_dev_wrapper::startController(std::string portAddress)
             m_device->wirelessController()->setSerialPointName(portAddress);
             std::cout << "wireless controller start" << std::endl;
             m_device->wirelessController()->start();
-            
+
+            // Check if map_optical_frame has been published already
+            std::string map_frame = this->m_node->getFrameID("map_optical_frame");
+            if (!this->m_node->isFramePublished(map_frame)) {
+                geometry_msgs::msg::TransformStamped static_transform;
+                static_transform.header.stamp = rclcpp::Clock().now();
+                static_transform.header.frame_id = "world";
+                static_transform.child_frame_id = map_frame;
+                static_transform.transform.translation.x = 0.0;
+                static_transform.transform.translation.y = 0.0;
+                static_transform.transform.translation.z = 0.0;
+                static_transform.transform.rotation.x = 0.0;
+                static_transform.transform.rotation.y = 0.0;
+                static_transform.transform.rotation.z = 0.0;
+                static_transform.transform.rotation.w = 1.0;
+                this->m_node->broadcasterStaticTfTransform(static_transform);
+                this->m_node->setFramePublished(map_frame);
+            }
+
             m_controllerCBID = m_device->wirelessController()->registerWirelessControllerDataCallback([this](const xv::WirelessControllerData& data)
             {
                 if(data.type == xv::WirelessControllerDataType::LEFT)
                 {
-                    std::cout << "publish left controller pose data" << std::endl;
+                    // std::cout << "publish left controller pose data" << std::endl;
                     geometry_msgs::msg::PoseStamped poseSteamped = to_ros_poseEdgeStamped(data.pose, this->m_node->getFrameID("map_optical_frame"));
                     this->m_node->publishLeftControllerPose(m_sn,poseSteamped);
-                    std::cout << "publish left controller key data" << std::endl;
+
+                    // Publish TF transform for left controller
+                    geometry_msgs::msg::TransformStamped transform = toRosTransformStamped(data.pose,
+                                                           this->m_node->getFrameID("map_optical_frame"),
+                                                           "left_controller_frame");
+                    // Ensure child_frame_id is set
+                    if (transform.child_frame_id.empty()) {
+                        transform.child_frame_id = "left_controller_frame";
+                    }
+                    this->m_node->broadcasterTfTransform(transform);
+
+                    // std::cout << "publish left controller key data" << std::endl;
                     xv_ros2_msgs::msg::Controller controllerData = toRosControllerData(data, this->m_node->getFrameID("map_optical_frame"));
                     this->m_node->publishLeftControllerData(m_sn, controllerData);
-                    
                 }
                 else if(data.type == xv::WirelessControllerDataType::RIGHT)
                 {
-                    std::cout << "publish right controller pose data" << std::endl;
+                    // std::cout << "publish right controller pose data" << std::endl;
                     geometry_msgs::msg::PoseStamped poseSteamped = to_ros_poseEdgeStamped(data.pose, this->m_node->getFrameID("map_optical_frame"));
                     this->m_node->publishRightControllerPose(m_sn, poseSteamped);
-                    std::cout << "publish right controller key data" << std::endl;
+
+                    // Publish TF transform for right controller
+                    geometry_msgs::msg::TransformStamped transform = toRosTransformStamped(data.pose,
+                                                           this->m_node->getFrameID("map_optical_frame"),
+                                                           "right_controller_frame");
+                    // Ensure child_frame_id is set
+                    if (transform.child_frame_id.empty()) {
+                        transform.child_frame_id = "right_controller_frame";
+                    }
+                    this->m_node->broadcasterTfTransform(transform);
+
+                    // std::cout << "publish right controller key data" << std::endl;
                     xv_ros2_msgs::msg::Controller controllerData = toRosControllerData(data, this->m_node->getFrameID("map_optical_frame"));
                     this->m_node->publishRightControllerData(m_sn, controllerData);
                 }

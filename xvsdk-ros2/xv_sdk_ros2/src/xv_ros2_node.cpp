@@ -1,9 +1,9 @@
 #include "xv_ros2_node.h"
-xvision_ros2_node::xvision_ros2_node(void) : 
+xvision_ros2_node::xvision_ros2_node(void) :
     Node("xvisio_SDK", rclcpp::NodeOptions()
     .automatically_declare_parameters_from_overrides(true)),
     count_(0),
-    m_stopWatchDevices(false) 
+    m_stopWatchDevices(false)
 {
 
 }
@@ -42,7 +42,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr startOrienSrv;
     m_service_imuSensor_startOri.emplace(sn, startOrienSrv);
     m_service_imuSensor_startOri[sn] = this->create_service<std_srvs::srv::Trigger>(oriStart.c_str(), imuSensor_startOri_callBack);
-    
+
     auto imuSensor_stopOri_callBack =[this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
@@ -55,7 +55,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stopOrienSrv;
     m_service_imuSensor_stopOri.emplace(sn, stopOrienSrv);
     m_service_imuSensor_stopOri[sn] = this->create_service<std_srvs::srv::Trigger>(oriStop.c_str(), imuSensor_stopOri_callBack);
-    
+
     auto imuSensor_getOri_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetOrientation_Request> req,
                                           std::shared_ptr<xv_ros2_msgs::srv::GetOrientation_Response> res) -> bool
     {
@@ -65,7 +65,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Service<xv_ros2_msgs::srv::GetOrientation>::SharedPtr oriGetCallback;
     m_service_imuSensor_getOri.emplace(sn, oriGetCallback);
     m_service_imuSensor_getOri[sn] = this->create_service<xv_ros2_msgs::srv::GetOrientation>(getOri.c_str(), imuSensor_getOri_callback);
-    
+
     auto imuSensor_getOriAt_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetOrientationAt_Request> req,
                                     std::shared_ptr<xv_ros2_msgs::srv::GetOrientationAt_Response> res) -> bool
     {
@@ -85,7 +85,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feImageLeftInfoPub;
     m_fisheyeImageLeftInfoPublisher.emplace(sn, feImageLeftInfoPub);
     m_fisheyeImageLeftInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfo0.c_str(), 1);
-    
+
     std::string feImage1 = "xv_sdk/SN" + sn +"/fisheye_cameras_right/image";
     image_transport::Publisher feImageRightPub;
     m_fisheyeImageRightPublisher.emplace(sn, feImageRightPub);
@@ -105,7 +105,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feAntiImageLeftInfoPub;
     m_fisheyeAntiDistortionCamLeftInfoPublisher.emplace(sn, feAntiImageLeftInfoPub);
     m_fisheyeAntiDistortionCamLeftInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfoAnti0.c_str(), 1);
-    
+
     std::string feImageAnti1 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_right/image";
     image_transport::Publisher feAntiImageRightPub;
     m_fisheyeAntiDistortionRightImagePublisher.emplace(sn, feAntiImageRightPub);
@@ -115,9 +115,9 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feAntiImageRightInfoPub;
     m_fisheyeAntiDistortionCamRightInfoPublisher.emplace(sn, feAntiImageRightInfoPub);
     m_fisheyeAntiDistortionCamRightInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfoAnti1.c_str(), 1);
-    
+
     auto slam_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-                                        std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool 
+                                        std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
         bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->start_slam() : false;
         res->success = ret;
@@ -130,7 +130,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     m_service_slam_start[sn] = this->create_service<std_srvs::srv::Trigger>(startSlam.c_str(), slam_start_service_callback);
 
     auto slam_stop_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-                                        std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool 
+                                        std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
         bool ret = m_deviceMap[sn] ?m_deviceMap[sn]->stop_slam() : false;
         res->success = ret;
@@ -143,7 +143,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     m_service_slam_stop[sn] = this->create_service<std_srvs::srv::Trigger>(stopSlam.c_str(), slam_stop_service_callback);
 
     auto slam_get_pose_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetPose::Request> req,
-                                        std::shared_ptr<xv_ros2_msgs::srv::GetPose::Response> res) -> bool 
+                                        std::shared_ptr<xv_ros2_msgs::srv::GetPose::Response> res) -> bool
     {
         bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->slam_get_pose(res->pose, req->prediction) : false;
         return ret;
@@ -155,7 +155,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     m_service_slam_get_pose[sn] = this->create_service<xv_ros2_msgs::srv::GetPose>(getPose.c_str(), slam_get_pose_service_callback);
 
     auto slam_get_pose_at_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetPoseAt::Request> req,
-                                        std::shared_ptr<xv_ros2_msgs::srv::GetPoseAt::Response> res) -> bool 
+                                        std::shared_ptr<xv_ros2_msgs::srv::GetPoseAt::Response> res) -> bool
     {
         bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->slam_get_pose_at(res->pose, req->timestamp) : false;
         return ret;
@@ -164,7 +164,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Service<xv_ros2_msgs::srv::GetPoseAt>::SharedPtr slamGetPoseAt;
     m_service_slam_get_pose_at.emplace(sn, slamGetPoseAt);
     m_service_slam_get_pose_at[sn] = this->create_service<xv_ros2_msgs::srv::GetPoseAt>(getPoseAt.c_str(), slam_get_pose_at_service_callback);
-    
+
     if(m_deviceConfig["slam_pose_enable"])
     {
         std::string slamPose = "xv_sdk/SN" + sn +"/pose";
@@ -182,7 +182,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     }
 
     // auto tof_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool 
+    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     // {
     //     bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->start_tof() : false;
     //     res->success = ret;
@@ -195,7 +195,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // m_service_tof_start[sn] = this->create_service<std_srvs::srv::Trigger>(startTOF.c_str(), tof_start_service_callback);
 
     // auto tof_stop_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool 
+    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     // {
     //     bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->stop_tof() : false;
     //     res->success = ret;
@@ -206,7 +206,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr tofStop;
     // m_service_tof_stop.emplace(sn, tofStop);
     // m_service_tof_stop[sn] = this->create_service<std_srvs::srv::Trigger>(stopTOF.c_str(), tof_stop_service_callback);
-    
+
     std::string tofImage = "xv_sdk/SN" + sn +"/tof/depth/image_rect_raw";
     image_transport::Publisher tofImagePub;
     m_tof_camera_publisher.emplace(sn, tofImagePub);
@@ -219,7 +219,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
         tofInfo.c_str(), 1);
 
     // auto rgb_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool 
+    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     // {
     //     bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->start_rgb() : false;
     //     res->success = ret;
@@ -232,7 +232,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // m_service_rgb_start[sn] = this->create_service<std_srvs::srv::Trigger>(startRGB.c_str(), rgb_start_service_callback);
 
     // auto rgb_stop_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool 
+    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     // {
     //     bool ret = m_deviceMap[sn] ? m_deviceMap[sn]->stop_rgb() : false;
     //     res->success = ret;
@@ -243,7 +243,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr rgbStopSrv;
     // m_service_rgb_stop.emplace(sn, rgbStopSrv);
     // m_service_rgb_stop[sn] = this->create_service<std_srvs::srv::Trigger>(stopRGB.c_str(), rgb_stop_service_callback);
-    
+
     std::string rgbImage = "xv_sdk/SN" + sn +"/rgb/image";
     image_transport::Publisher rgbImagePub;
     m_rgb_camera_publisher.emplace(sn, rgbImagePub);
@@ -252,7 +252,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     std::string rgbInfo = "xv_sdk/SN" + sn +"/rgb/camera_info";
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbImageInfoPub;
     m_rgb_cameraInfo_pub.emplace(sn, rgbImageInfoPub);
-    m_rgb_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbInfo.c_str(), 1);   
+    m_rgb_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbInfo.c_str(), 1);
 
     // std::string sgbmImage = "xv_sdk/SN" + sn +"/sgbm/image";
     // image_transport::Publisher sgbmImagePub;
@@ -262,7 +262,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // std::string sgbmInfo = "xv_sdk/SN" + sn +"/sgbm/camera_info";
     // rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr sgbmImageInfoPub;
     // m_sgbm_cameraInfo_pub.emplace(sn, sgbmImageInfoPub);
-    // m_sgbm_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(sgbmInfo.c_str(), 1);   
+    // m_sgbm_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(sgbmInfo.c_str(), 1);
     // std::string sgbmRawImage = "xv_sdk/SN" + sn +"/sgbm/sgbmRaw/image";
     // image_transport::Publisher sgbmRawImagePub;
     // m_sgbm_raw_camera_publisher.emplace(sn, sgbmRawImagePub);
@@ -271,7 +271,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     // std::string sgbmRawImageInfo = "xv_sdk/SN" + sn +"/sgbm/sgbmRaw/camera_info";
     // rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr sgbmRawImageInfoPub;
     // m_sgbm_raw_cameraInfo_pub.emplace(sn, sgbmRawImageInfoPub);
-    // m_sgbm_raw_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(sgbmRawImageInfo.c_str(), 1);  
+    // m_sgbm_raw_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(sgbmRawImageInfo.c_str(), 1);
 
     std::string rgbdImage = "xv_sdk/SN" + sn +"/rgbd/image";
     image_transport::Publisher rgbdImagePub;
@@ -281,7 +281,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     std::string rgbdInfo = "xv_sdk/SN" + sn +"/rgbd/camera_info";
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbdImageInfoPub;
     m_rgbd_cameraInfo_pub.emplace(sn, rgbdImageInfoPub);
-    m_rgbd_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbdInfo.c_str(), 1); 
+    m_rgbd_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbdInfo.c_str(), 1);
 
     std::string rgbdRawImage = "xv_sdk/SN" + sn +"/rgbd/raw/image";
     image_transport::Publisher rgbdRawImagePub;
@@ -291,7 +291,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     std::string rgbdRawInfo = "xv_sdk/SN" + sn +"/rgbd/raw/camera_info";
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbdRawImageInfoPub;
     m_rgbd_raw_cameraInfo_pub.emplace(sn, rgbdRawImageInfoPub);
-    m_rgbd_raw_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbdRawInfo.c_str(), 1); 
+    m_rgbd_raw_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbdRawInfo.c_str(), 1);
 
     std::string rgbdRaw = "xv_sdk/SN" + sn +"/rgbd/raw/data";
     rclcpp::Publisher<xv_ros2_msgs::msg::ColorDepth>::SharedPtr rgbdRawPub;
@@ -299,7 +299,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     m_rgbd_raw_data_publisher[sn] = this->create_publisher<xv_ros2_msgs::msg::ColorDepth>(rgbdRaw.c_str(),1);
 
     auto cslam_savemap_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::SaveMapAndSwitchCslam::Request> req,
-                                        std::shared_ptr<xv_ros2_msgs::srv::SaveMapAndSwitchCslam::Response> res) -> bool 
+                                        std::shared_ptr<xv_ros2_msgs::srv::SaveMapAndSwitchCslam::Response> res) -> bool
     {
         bool ret = m_deviceMap[sn]->saveCslamMap(req->filename);
         if(ret)
@@ -320,7 +320,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     m_cslam_save_map[sn] = this->create_service<xv_ros2_msgs::srv::SaveMapAndSwitchCslam>(cslamSave.c_str(), cslam_savemap_service_callback);
 
     auto cslam_loadmap_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::LoadMapAndSwitchCslam::Request> req,
-                                        std::shared_ptr<xv_ros2_msgs::srv::LoadMapAndSwitchCslam::Response> res) -> bool 
+                                        std::shared_ptr<xv_ros2_msgs::srv::LoadMapAndSwitchCslam::Response> res) -> bool
     {
         bool ret = m_deviceMap[sn]->loadCslamMap(req->filename);
         if(ret)
@@ -389,7 +389,7 @@ void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
     std::cout << "start controller port " << this->getFrameID("controller_port") << std::endl;
     m_controllerMap[sn]->startController(this->getFrameID("controller_port"));
     // auto controller_start_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::ControllerStart::Request> req,
-    //                                     std::shared_ptr<xv_ros2_msgs::srv::ControllerStart::Response> res) -> bool 
+    //                                     std::shared_ptr<xv_ros2_msgs::srv::ControllerStart::Response> res) -> bool
     // {
     //     std::cout << "port address: " << req->portaddress << std::endl;
     //     bool ret = m_controllerMap[sn]->startController(req->portaddress);
@@ -411,7 +411,7 @@ void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
     // m_controller_start[sn] = this->create_service<xv_ros2_msgs::srv::ControllerStart>(controllerStart.c_str(), controller_start_service_callback);
 
     // auto controller_stop_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::ControllerStop::Request> /*req*/,
-    //                                     std::shared_ptr<xv_ros2_msgs::srv::ControllerStop::Response> res) -> bool 
+    //                                     std::shared_ptr<xv_ros2_msgs::srv::ControllerStop::Response> res) -> bool
     // {
     //     bool ret = m_controllerMap[sn]->stopController();
     //     if(ret)
@@ -461,7 +461,7 @@ void xvision_ros2_node::initFrameIDParameter(void)
     this->declare_parameter<std::float_t>("imu_angular_velocity",
                                          0.0);
     // this->declare_parameter<std::true_type>("slam_path_enable",
-    //                                     false);              
+    //                                     false);
 }
 
 void xvision_ros2_node::get_frameId_parameters(void)
@@ -478,7 +478,7 @@ void xvision_ros2_node::get_frameId_parameters(void)
                                         "sgbm_optical_frame",
                                         "tof_optical_frame",
                                         "imu_link",
-                                        "base_link", 
+                                        "base_link",
                                         "controller_port"};
     for(auto &param_name : paramNames)
     {
@@ -564,7 +564,7 @@ void xvision_ros2_node::publishFEImage(std::string sn,
     }
 }
 
-void xvision_ros2_node::publishFEAntiDistortionImage(std::string sn, 
+void xvision_ros2_node::publishFEAntiDistortionImage(std::string sn,
                                        const rosImage& image,
                                        const rosCamInfo& cameraInfo,
                                        xv_dev_wrapper::FE_IMAGE_TYPE imageType)
@@ -675,9 +675,17 @@ void xvision_ros2_node::broadcasterTfTransform(const geometry_msgs::msg::Transfo
     }
 }
 
+void xvision_ros2_node::broadcasterStaticTfTransform(const geometry_msgs::msg::TransformStamped& transform)
+{
+    if(m_static_tf_broadcaster)
+    {
+        m_static_tf_broadcaster->sendTransform(transform);
+    }
+}
+
 void xvision_ros2_node::watchDevices(void)
 {
-    while (!m_stopWatchDevices) 
+    while (!m_stopWatchDevices)
     {
         xv::setLogLevel(xv::LogLevel::info);
         std::map<std::string, std::shared_ptr<Device>> device_map;
@@ -719,15 +727,15 @@ void xvision_ros2_node::watchDevices(void)
                     std::cout << "init device topic" << std::endl;
                     initTopicAndServer(m_devSerialNumber);
                 }
-            } 
-        }  
+            }
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 
 void xvision_ros2_node::watchControllers(void)
 {
-    while (!m_stopWatchDevices) 
+    while (!m_stopWatchDevices)
     {
         xv::setLogLevel(xv::LogLevel::info);
         std::map<std::string, std::shared_ptr<Device>> controller_map;
@@ -767,8 +775,8 @@ void xvision_ros2_node::watchControllers(void)
                     m_controllerMap.emplace(m_controllerSerialNumber, std::make_shared<xv_dev_wrapper>(this, controller_map[m_controllerSerialNumber], m_controllerSerialNumber, 2));
                     initControllerTopicAndServer("Controller");
                 }
-            } 
-        }  
+            }
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
@@ -835,4 +843,14 @@ void xvision_ros2_node::publisheButton(std::string sn, int buttonType, const xv_
             }
             break;
     }
+}
+
+bool xvision_ros2_node::isFramePublished(const std::string& frame_id)
+{
+    return m_published_frames.find(frame_id) != m_published_frames.end();
+}
+
+void xvision_ros2_node::setFramePublished(const std::string& frame_id)
+{
+    m_published_frames.insert(frame_id);
 }

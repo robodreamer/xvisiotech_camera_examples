@@ -68,6 +68,9 @@ public:
     void publishRightControllerData(std::string sn, const xv_ros2_msgs::msg::Controller& controllerMsg);
     void publisheEvent(std::string sn, const xv_ros2_msgs::msg::EventData& eventMsg);
     void publisheButton(std::string sn, int buttonType, const xv_ros2_msgs::msg::ButtonMsg& buttonMsg);
+    void broadcasterStaticTfTransform(const geometry_msgs::msg::TransformStamped & transform);
+    bool isFramePublished(const std::string& frame_id);
+    void setFramePublished(const std::string& frame_id);
 
 private:
     void watchDevices(void);
@@ -76,14 +79,14 @@ private:
 private:
     // imu publisher and service.
     std::map<std::string, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> m_imuPublisher;
-    
+
     // orientationStream publisher and service.
     std::map<std::string, rclcpp::Publisher<xv_ros2_msgs::msg::OrientationStamped>::SharedPtr> m_orientationPublisher;
     std::map<std::string, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr> m_service_imuSensor_startOri;
     std::map<std::string, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr> m_service_imuSensor_stopOri;
     std::map<std::string, rclcpp::Service<xv_ros2_msgs::srv::GetOrientation>::SharedPtr> m_service_imuSensor_getOri;
     std::map<std::string, rclcpp::Service<xv_ros2_msgs::srv::GetOrientationAt>::SharedPtr> m_service_imuSensor_getOriAt;
-    
+
     // FE publisher and service.
     std::map<std::string, image_transport::Publisher>  m_fisheyeImageLeftPublisher;
     std::map<std::string, image_transport::Publisher>  m_fisheyeImageRightPublisher;
@@ -105,7 +108,7 @@ private:
 
     //tf2 static transform broadcaster
     std::shared_ptr<tf2_ros::StaticTransformBroadcaster> m_static_tf_broadcaster;
-    
+
     //tof publisher and service.
     std::map<std::string, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr> m_service_tof_start;
     std::map<std::string, rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr> m_service_tof_stop;
@@ -159,5 +162,6 @@ private:
     std::map<std::string, bool> m_deviceConfig;
     std::shared_ptr<xv::Device> controllerDevice;
     std::string controllerSN;
+    std::set<std::string> m_published_frames;
 };
 #endif
