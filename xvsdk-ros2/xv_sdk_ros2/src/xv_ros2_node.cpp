@@ -76,45 +76,48 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     m_service_imuSensor_getOriAt.emplace(sn, oriGetAtCallback);
     m_service_imuSensor_getOriAt[sn] = this->create_service<xv_ros2_msgs::srv::GetOrientationAt>(getOriAt.c_str(), imuSensor_getOriAt_callback);
 
-    std::string feImage0 = "xv_sdk/SN" + sn +"/fisheye_cameras_left/image";
-    image_transport::Publisher feImageLeftPub;
-    m_fisheyeImageLeftPublisher.emplace(sn, feImageLeftPub);
-    m_fisheyeImageLeftPublisher[sn] = image_transport::create_publisher(
-        this, feImage0.c_str());//this->create_publisher<sensor_msgs::msg::Image>("", 10);
-    std::string feInfo0 = "xv_sdk/SN" + sn +"/fisheye_cameras_left/camera_info";
-    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feImageLeftInfoPub;
-    m_fisheyeImageLeftInfoPublisher.emplace(sn, feImageLeftInfoPub);
-    m_fisheyeImageLeftInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfo0.c_str(), 1);
+    // Only create fisheye publishers if enabled
+    if (m_deviceConfig["fisheye_enable"]) {
+        std::string feImage0 = "xv_sdk/SN" + sn +"/fisheye_cameras_left/image";
+        image_transport::Publisher feImageLeftPub;
+        m_fisheyeImageLeftPublisher.emplace(sn, feImageLeftPub);
+        m_fisheyeImageLeftPublisher[sn] = image_transport::create_publisher(
+            this, feImage0.c_str());
+        std::string feInfo0 = "xv_sdk/SN" + sn +"/fisheye_cameras_left/camera_info";
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feImageLeftInfoPub;
+        m_fisheyeImageLeftInfoPublisher.emplace(sn, feImageLeftInfoPub);
+        m_fisheyeImageLeftInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfo0.c_str(), 1);
 
-    std::string feImage1 = "xv_sdk/SN" + sn +"/fisheye_cameras_right/image";
-    image_transport::Publisher feImageRightPub;
-    m_fisheyeImageRightPublisher.emplace(sn, feImageRightPub);
-    m_fisheyeImageRightPublisher[sn] = image_transport::create_publisher(
-        this, feImage1.c_str());//this->create_publisher<sensor_msgs::msg::Image>("fisheye_cameras_right/image", 10);
-    std::string feInfo1 = "xv_sdk/SN" + sn +"/fisheye_cameras_right/camera_info";
-    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feImagRightInfoPub;
-    m_fisheyeImageRightInfoPublisher.emplace(sn, feImagRightInfoPub);
-    m_fisheyeImageRightInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfo1.c_str(), 1);
+        std::string feImage1 = "xv_sdk/SN" + sn +"/fisheye_cameras_right/image";
+        image_transport::Publisher feImageRightPub;
+        m_fisheyeImageRightPublisher.emplace(sn, feImageRightPub);
+        m_fisheyeImageRightPublisher[sn] = image_transport::create_publisher(
+            this, feImage1.c_str());
+        std::string feInfo1 = "xv_sdk/SN" + sn +"/fisheye_cameras_right/camera_info";
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feImagRightInfoPub;
+        m_fisheyeImageRightInfoPublisher.emplace(sn, feImagRightInfoPub);
+        m_fisheyeImageRightInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfo1.c_str(), 1);
 
-    std::string feImageAnti0 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_left/image";
-    image_transport::Publisher feAntiImageLeftPub;
-    m_fisheyeAntiDistortionLeftImagePublisher.emplace(sn, feAntiImageLeftPub);
-    m_fisheyeAntiDistortionLeftImagePublisher[sn] = image_transport::create_publisher(
-        this, feImageAnti0.c_str());//this->create_publisher<sensor_msgs::msg::Image>("", 10);
-    std::string feInfoAnti0 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_left/camera_info";
-    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feAntiImageLeftInfoPub;
-    m_fisheyeAntiDistortionCamLeftInfoPublisher.emplace(sn, feAntiImageLeftInfoPub);
-    m_fisheyeAntiDistortionCamLeftInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfoAnti0.c_str(), 1);
+        std::string feImageAnti0 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_left/image";
+        image_transport::Publisher feAntiImageLeftPub;
+        m_fisheyeAntiDistortionLeftImagePublisher.emplace(sn, feAntiImageLeftPub);
+        m_fisheyeAntiDistortionLeftImagePublisher[sn] = image_transport::create_publisher(
+            this, feImageAnti0.c_str());
+        std::string feInfoAnti0 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_left/camera_info";
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feAntiImageLeftInfoPub;
+        m_fisheyeAntiDistortionCamLeftInfoPublisher.emplace(sn, feAntiImageLeftInfoPub);
+        m_fisheyeAntiDistortionCamLeftInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfoAnti0.c_str(), 1);
 
-    std::string feImageAnti1 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_right/image";
-    image_transport::Publisher feAntiImageRightPub;
-    m_fisheyeAntiDistortionRightImagePublisher.emplace(sn, feAntiImageRightPub);
-    m_fisheyeAntiDistortionRightImagePublisher[sn] = image_transport::create_publisher(
-        this, feImageAnti1.c_str());//this->create_publisher<sensor_msgs::msg::Image>("fisheye_cameras_right/image", 10);
-    std::string feInfoAnti1 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_right/camera_info";
-    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feAntiImageRightInfoPub;
-    m_fisheyeAntiDistortionCamRightInfoPublisher.emplace(sn, feAntiImageRightInfoPub);
-    m_fisheyeAntiDistortionCamRightInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfoAnti1.c_str(), 1);
+        std::string feImageAnti1 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_right/image";
+        image_transport::Publisher feAntiImageRightPub;
+        m_fisheyeAntiDistortionRightImagePublisher.emplace(sn, feAntiImageRightPub);
+        m_fisheyeAntiDistortionRightImagePublisher[sn] = image_transport::create_publisher(
+            this, feImageAnti1.c_str());
+        std::string feInfoAnti1 = "xv_sdk/SN" + sn +"/fisheye_AntiDistortion_cameras_right/camera_info";
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr feAntiImageRightInfoPub;
+        m_fisheyeAntiDistortionCamRightInfoPublisher.emplace(sn, feAntiImageRightInfoPub);
+        m_fisheyeAntiDistortionCamRightInfoPublisher[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(feInfoAnti1.c_str(), 1);
+    }
 
     auto slam_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
@@ -519,6 +522,11 @@ void xvision_ros2_node::publishFEImage(std::string sn,
                                        const rosCamInfo& cameraInfo,
                                        xv_dev_wrapper::FE_IMAGE_TYPE imageType)
 {
+    // Only publish if fisheye is enabled
+    if (!m_deviceConfig["fisheye_enable"]) {
+        return;
+    }
+
     if(imageType == xv_dev_wrapper::FE_IMAGE_TYPE::LEFT_IMAGE)
     {
         if(m_fisheyeImageLeftPublisher[sn] && m_fisheyeImageLeftInfoPublisher[sn])
@@ -542,6 +550,11 @@ void xvision_ros2_node::publishFEAntiDistortionImage(std::string sn,
                                        const rosCamInfo& cameraInfo,
                                        xv_dev_wrapper::FE_IMAGE_TYPE imageType)
 {
+    // Only publish if fisheye is enabled
+    if (!m_deviceConfig["fisheye_enable"]) {
+        return;
+    }
+
     if(imageType == xv_dev_wrapper::FE_IMAGE_TYPE::LEFT_IMAGE)
     {
         if(m_fisheyeAntiDistortionLeftImagePublisher[sn] && m_fisheyeAntiDistortionCamLeftInfoPublisher[sn])
