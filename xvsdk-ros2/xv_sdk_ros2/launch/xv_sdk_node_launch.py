@@ -9,7 +9,12 @@ def generate_launch_description():
     slam_path_enable = launch.substitutions.LaunchConfiguration('slam_path_enable', default='true')
     slam_pose_enable = launch.substitutions.LaunchConfiguration('slam_pose_enable', default='true')
     fisheye_enable = launch.substitutions.LaunchConfiguration('fisheye_enable', default='false')
-    button_states_enable = launch.substitutions.LaunchConfiguration('button_states_enable', default='true')
+    button_states_enable = launch.substitutions.LaunchConfiguration('button_states_enable', default='false')
+    rgb_enable = launch.substitutions.LaunchConfiguration('rgb_enable', default='false')
+    tof_enable = launch.substitutions.LaunchConfiguration('tof_enable', default='false')
+    rgbd_enable = launch.substitutions.LaunchConfiguration('rgbd_enable', default='false')
+    event_enable = launch.substitutions.LaunchConfiguration('event_enable', default='false')
+    orientation_enable = launch.substitutions.LaunchConfiguration('orientation_enable', default='false')
 
     return LaunchDescription([
         Node(
@@ -36,6 +41,11 @@ def generate_launch_description():
                 {"slam_pose_enable": slam_pose_enable},
                 {"fisheye_enable": fisheye_enable},
                 {"button_states_enable": button_states_enable},
+                {"rgb_enable": rgb_enable},
+                {"tof_enable": tof_enable},
+                {"rgbd_enable": rgbd_enable},
+                {"event_enable": event_enable},
+                {"orientation_enable": orientation_enable},
                 {"controller_port": "/dev/ttyUSB0"}
             ]
         )

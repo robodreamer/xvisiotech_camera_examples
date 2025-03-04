@@ -26,10 +26,15 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuPublisher;
     m_imuPublisher.emplace(sn, imuPublisher);
     m_imuPublisher[sn] = this->create_publisher<sensor_msgs::msg::Imu>(imuPubName.c_str(), 10);
-    std::string oriPubName = "xv_sdk/SN" + sn +"/orientation";
-    rclcpp::Publisher<xv_ros2_msgs::msg::OrientationStamped>::SharedPtr orienPublisher;
-    m_orientationPublisher.emplace(sn, orienPublisher);
-    m_orientationPublisher[sn] = this->create_publisher<xv_ros2_msgs::msg::OrientationStamped>(oriPubName.c_str(),1);
+
+    // Only create orientation publisher if enabled
+    if (m_deviceConfig["orientation_enable"]) {
+        std::string oriPubName = "xv_sdk/SN" + sn +"/orientation";
+        rclcpp::Publisher<xv_ros2_msgs::msg::OrientationStamped>::SharedPtr orienPublisher;
+        m_orientationPublisher.emplace(sn, orienPublisher);
+        m_orientationPublisher[sn] = this->create_publisher<xv_ros2_msgs::msg::OrientationStamped>(oriPubName.c_str(),1);
+    }
+
     auto imuSensor_startOri_callBack =[this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
@@ -184,122 +189,60 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
         m_slam_path_publisher[sn] = this->create_publisher<nav_msgs::msg::Path>(trajectory.c_str(), 1);
     }
 
-    // auto tof_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
-    // {
-    //     bool success = m_deviceMap[sn] ? m_deviceMap[sn]->start_tof() : false;
-    //     res->success = success;
-    //     res->message = success ? "successed" : "failed";
-    //     return success;
-    // };
-    // std::string startTOF = "xv_sdk/SN" + sn +"/start_tof";
-    // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr tofStart;
-    // m_service_tof_start.emplace(sn, tofStart);
-    // m_service_tof_start[sn] = this->create_service<std_srvs::srv::Trigger>(startTOF.c_str(), tof_start_service_callback);
+    // Only create ToF publishers if enabled
+    if (m_deviceConfig["tof_enable"]) {
+        std::string tofImage = "xv_sdk/SN" + sn +"/tof/depth/image_rect_raw";
+        image_transport::Publisher tofImagePub;
+        m_tof_camera_publisher.emplace(sn, tofImagePub);
+        m_tof_camera_publisher[sn] = image_transport::create_publisher(
+            this, tofImage.c_str());
+        std::string tofInfo = "xv_sdk/SN" + sn +"/tof/depth/camera_info";
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr tofImageInfo;
+        m_tof_cameraInfo_pub.emplace(sn, tofImageInfo);
+        m_tof_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
+            tofInfo.c_str(), 1);
+    }
 
-    // auto tof_stop_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
-    // {
-    //     bool success = m_deviceMap[sn] ? m_deviceMap[sn]->stop_tof() : false;
-    //     res->success = success;
-    //     res->message = success ? "successed" : "failed";
-    //     return success;
-    // };
-    // std::string stopTOF = "xv_sdk/SN" + sn +"/stop_tof";
-    // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr tofStop;
-    // m_service_tof_stop.emplace(sn, tofStop);
-    // m_service_tof_stop[sn] = this->create_service<std_srvs::srv::Trigger>(stopTOF.c_str(), tof_stop_service_callback);
+    // Only create RGB publishers if enabled
+    if (m_deviceConfig["rgb_enable"]) {
+        std::string rgbImage = "xv_sdk/SN" + sn +"/rgb/image";
+        image_transport::Publisher rgbImagePub;
+        m_rgb_camera_publisher.emplace(sn, rgbImagePub);
+        m_rgb_camera_publisher[sn] = image_transport::create_publisher(
+            this, rgbImage.c_str());
+        std::string rgbInfo = "xv_sdk/SN" + sn +"/rgb/camera_info";
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbImageInfoPub;
+        m_rgb_cameraInfo_pub.emplace(sn, rgbImageInfoPub);
+        m_rgb_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbInfo.c_str(), 1);
+    }
 
-    std::string tofImage = "xv_sdk/SN" + sn +"/tof/depth/image_rect_raw";
-    image_transport::Publisher tofImagePub;
-    m_tof_camera_publisher.emplace(sn, tofImagePub);
-    m_tof_camera_publisher[sn] = image_transport::create_publisher(
-        this, tofImage.c_str());//image_transport::create_camera_publisher(this, "camera/depth/image_rect_raw");
-    std::string tofInfo = "xv_sdk/SN" + sn +"/tof/depth/camera_info";
-    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr tofImageInfo;
-    m_tof_cameraInfo_pub.emplace(sn, tofImageInfo);
-    m_tof_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
-        tofInfo.c_str(), 1);
+    // Only create RGBD publishers if enabled
+    if (m_deviceConfig["rgbd_enable"]) {
+        std::string rgbdImage = "xv_sdk/SN" + sn +"/rgbd/image";
+        image_transport::Publisher rgbdImagePub;
+        m_rgbd_camera_publisher.emplace(sn, rgbdImagePub);
+        m_rgbd_camera_publisher[sn] = image_transport::create_publisher(
+            this, rgbdImage.c_str());
+        std::string rgbdInfo = "xv_sdk/SN" + sn +"/rgbd/camera_info";
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbdImageInfoPub;
+        m_rgbd_cameraInfo_pub.emplace(sn, rgbdImageInfoPub);
+        m_rgbd_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbdInfo.c_str(), 1);
 
-    // auto rgb_start_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
-    // {
-    //     bool success = m_deviceMap[sn] ? m_deviceMap[sn]->start_rgb() : false;
-    //     res->success = success;
-    //     res->message = success ? "successed" : "failed";
-    //     return success;
-    // };
-    // std::string startRGB = "xv_sdk/SN" + sn +"/start_rgb";
-    // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr rgbStartSrv;
-    // m_service_rgb_start.emplace(sn, rgbStartSrv);
-    // m_service_rgb_start[sn] = this->create_service<std_srvs::srv::Trigger>(startRGB.c_str(), rgb_start_service_callback);
+        std::string rgbdRawImage = "xv_sdk/SN" + sn +"/rgbd/raw/image";
+        image_transport::Publisher rgbdRawImagePub;
+        m_rgbd_raw_camera_publisher.emplace(sn, rgbdRawImagePub);
+        m_rgbd_raw_camera_publisher[sn] = image_transport::create_publisher(
+            this, rgbdRawImage.c_str());
+        std::string rgbdRawInfo = "xv_sdk/SN" + sn +"/rgbd/raw/camera_info";
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbdRawImageInfoPub;
+        m_rgbd_raw_cameraInfo_pub.emplace(sn, rgbdRawImageInfoPub);
+        m_rgbd_raw_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbdRawInfo.c_str(), 1);
 
-    // auto rgb_stop_service_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
-    //                                     std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
-    // {
-    //     bool success = m_deviceMap[sn] ? m_deviceMap[sn]->stop_rgb() : false;
-    //     res->success = success;
-    //     res->message = success ? "successed" : "failed";
-    //     return success;
-    // };
-    // std::string stopRGB = "xv_sdk/SN" + sn +"/stop_rgb";
-    // rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr rgbStopSrv;
-    // m_service_rgb_stop.emplace(sn, rgbStopSrv);
-    // m_service_rgb_stop[sn] = this->create_service<std_srvs::srv::Trigger>(stopRGB.c_str(), rgb_stop_service_callback);
-
-    std::string rgbImage = "xv_sdk/SN" + sn +"/rgb/image";
-    image_transport::Publisher rgbImagePub;
-    m_rgb_camera_publisher.emplace(sn, rgbImagePub);
-    m_rgb_camera_publisher[sn] = image_transport::create_publisher(
-        this, rgbImage.c_str());
-    std::string rgbInfo = "xv_sdk/SN" + sn +"/rgb/camera_info";
-    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbImageInfoPub;
-    m_rgb_cameraInfo_pub.emplace(sn, rgbImageInfoPub);
-    m_rgb_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbInfo.c_str(), 1);
-
-    // std::string sgbmImage = "xv_sdk/SN" + sn +"/sgbm/image";
-    // image_transport::Publisher sgbmImagePub;
-    // m_sgbm_camera_publisher.emplace(sn, sgbmImagePub);
-    // m_sgbm_camera_publisher[sn] = image_transport::create_publisher(
-    //     this, sgbmImage.c_str());
-    // std::string sgbmInfo = "xv_sdk/SN" + sn +"/sgbm/camera_info";
-    // rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr sgbmImageInfoPub;
-    // m_sgbm_cameraInfo_pub.emplace(sn, sgbmImageInfoPub);
-    // m_sgbm_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(sgbmInfo.c_str(), 1);
-    // std::string sgbmRawImage = "xv_sdk/SN" + sn +"/sgbm/sgbmRaw/image";
-    // image_transport::Publisher sgbmRawImagePub;
-    // m_sgbm_raw_camera_publisher.emplace(sn, sgbmRawImagePub);
-    // m_sgbm_raw_camera_publisher[sn] = image_transport::create_publisher(
-    //     this, sgbmRawImage.c_str());
-    // std::string sgbmRawImageInfo = "xv_sdk/SN" + sn +"/sgbm/sgbmRaw/camera_info";
-    // rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr sgbmRawImageInfoPub;
-    // m_sgbm_raw_cameraInfo_pub.emplace(sn, sgbmRawImageInfoPub);
-    // m_sgbm_raw_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(sgbmRawImageInfo.c_str(), 1);
-
-    std::string rgbdImage = "xv_sdk/SN" + sn +"/rgbd/image";
-    image_transport::Publisher rgbdImagePub;
-    m_rgbd_camera_publisher.emplace(sn, rgbdImagePub);
-    m_rgbd_camera_publisher[sn] = image_transport::create_publisher(
-        this, rgbdImage.c_str());
-    std::string rgbdInfo = "xv_sdk/SN" + sn +"/rgbd/camera_info";
-    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbdImageInfoPub;
-    m_rgbd_cameraInfo_pub.emplace(sn, rgbdImageInfoPub);
-    m_rgbd_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbdInfo.c_str(), 1);
-
-    std::string rgbdRawImage = "xv_sdk/SN" + sn +"/rgbd/raw/image";
-    image_transport::Publisher rgbdRawImagePub;
-    m_rgbd_raw_camera_publisher.emplace(sn, rgbdRawImagePub);
-    m_rgbd_raw_camera_publisher[sn] = image_transport::create_publisher(
-        this, rgbdRawImage.c_str());
-    std::string rgbdRawInfo = "xv_sdk/SN" + sn +"/rgbd/raw/camera_info";
-    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr rgbdRawImageInfoPub;
-    m_rgbd_raw_cameraInfo_pub.emplace(sn, rgbdRawImageInfoPub);
-    m_rgbd_raw_cameraInfo_pub[sn] = this->create_publisher<sensor_msgs::msg::CameraInfo>(rgbdRawInfo.c_str(), 1);
-
-    std::string rgbdRaw = "xv_sdk/SN" + sn +"/rgbd/raw/data";
-    rclcpp::Publisher<xv_ros2_msgs::msg::ColorDepth>::SharedPtr rgbdRawPub;
-    m_rgbd_raw_data_publisher.emplace(sn, rgbdRawPub);
-    m_rgbd_raw_data_publisher[sn] = this->create_publisher<xv_ros2_msgs::msg::ColorDepth>(rgbdRaw.c_str(),1);
+        std::string rgbdRaw = "xv_sdk/SN" + sn +"/rgbd/raw/data";
+        rclcpp::Publisher<xv_ros2_msgs::msg::ColorDepth>::SharedPtr rgbdRawPub;
+        m_rgbd_raw_data_publisher.emplace(sn, rgbdRawPub);
+        m_rgbd_raw_data_publisher[sn] = this->create_publisher<xv_ros2_msgs::msg::ColorDepth>(rgbdRaw.c_str(),1);
+    }
 
     auto cslam_savemap_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::SaveMapAndSwitchCslam::Request> req,
                                         std::shared_ptr<xv_ros2_msgs::srv::SaveMapAndSwitchCslam::Response> res) -> bool
@@ -343,10 +286,13 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     m_cslam_load_map.emplace(sn, loadMapSrv);
     m_cslam_load_map[sn] = this->create_service<xv_ros2_msgs::srv::LoadMapAndSwitchCslam>(cslamLoad.c_str(), cslam_loadmap_service_callback);
 
-    std::string eventName = "xv_sdk/SN" + sn +"/event";
-    rclcpp::Publisher<xv_ros2_msgs::msg::EventData>::SharedPtr eventPublisher;
-    m_eventPublisher.emplace(sn, eventPublisher);
-    m_eventPublisher[sn] = this->create_publisher<xv_ros2_msgs::msg::EventData>(eventName.c_str(),1);
+    // Only create event publisher if enabled
+    if (m_deviceConfig["event_enable"]) {
+        std::string eventPubName = "xv_sdk/SN" + sn +"/event";
+        rclcpp::Publisher<xv_ros2_msgs::msg::EventData>::SharedPtr eventPub;
+        m_eventPublisher.emplace(sn, eventPub);
+        m_eventPublisher[sn] = this->create_publisher<xv_ros2_msgs::msg::EventData>(eventPubName.c_str(), 1);
+    }
 
     // Only create button publishers if enabled
     if (m_deviceConfig["button_states_enable"]) {
@@ -464,24 +410,20 @@ void xvision_ros2_node::get_frameId_parameters(void)
 
 void xvision_ros2_node::get_device_config_parameters(void)
 {
-    m_deviceConfig["slam_path_enable"] = false;
-    m_deviceConfig["slam_pose_enable"] = true;
-    m_deviceConfig["fisheye_enable"] = false;
-    m_deviceConfig["button_states_enable"] = true;  // Add default value for button states
+    std::vector<std::string> config_params = {
+        "slam_path_enable", "slam_pose_enable", "fisheye_enable",
+        "button_states_enable", "rgb_enable", "tof_enable", "rgbd_enable",
+        "event_enable", "orientation_enable"
+    };
 
-    bool configState = false;
-    for(auto &config_name : m_deviceConfig)
-    {
-        bool success = this->get_parameter_or(config_name.first, configState, config_name.second);
-        if(!success)
-        {
-            printErrorMsg("Launch file has no " + config_name.first + " parameter");
-            continue;
-        }
-        config_name.second = configState;
+    for (const auto& param : config_params) {
+        bool value = false;
+        this->get_parameter(param, value);
+        m_deviceConfig[param] = value;
     }
-    for(auto &config : m_deviceConfig)
-    {
+
+    // Log all parameters
+    for (const auto& config : m_deviceConfig) {
         RCLCPP_INFO(this->get_logger(), "%s: %s", config.first.c_str(), config.second ? "true" : "false");
     }
 }
@@ -511,8 +453,12 @@ void xvision_ros2_node::publishImu(std::string sn, const sensor_msgs::msg::Imu &
 
 void xvision_ros2_node::publisheOrientation(std::string sn, const xv_ros2_msgs::msg::OrientationStamped& orientationMsg)
 {
-    if(m_orientationPublisher[sn])
-    {
+    // Only publish if orientation is enabled
+    if (!m_deviceConfig["orientation_enable"]) {
+        return;
+    }
+
+    if (m_orientationPublisher.count(sn) > 0) {
         m_orientationPublisher[sn]->publish(orientationMsg);
     }
 }
@@ -583,60 +529,88 @@ void xvision_ros2_node::publishSlamPose(std::string sn, const geometry_msgs::msg
 
 void xvision_ros2_node::publishSlamTrajectory(std::string sn, const nav_msgs::msg::Path& path)
 {
-    if(m_slam_path_publisher[sn])
-    {
+    // Only publish if slam_path is enabled
+    if (!m_deviceConfig["slam_path_enable"]) {
+        return;
+    }
+
+    if (m_slam_path_publisher.count(sn) > 0) {
         m_slam_path_publisher[sn]->publish(path);
     }
 }
 
-void xvision_ros2_node::publishTofCameraImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo)
+void xvision_ros2_node::publishTofCameraImage(std::string sn, const sensor_msgs::msg::Image& image, const sensor_msgs::msg::CameraInfo& cameraInfo)
 {
-    m_tof_camera_publisher[sn].publish(image);//, cameraInfo);
-    m_tof_cameraInfo_pub[sn]->publish(cameraInfo);
+    // Only publish if ToF is enabled
+    if (!m_deviceConfig["tof_enable"]) {
+        return;
+    }
+
+    if (m_tof_camera_publisher.count(sn) > 0 && m_tof_cameraInfo_pub.count(sn) > 0) {
+        m_tof_camera_publisher[sn].publish(image);
+        m_tof_cameraInfo_pub[sn]->publish(cameraInfo);
+    }
 }
 
-void xvision_ros2_node::publishRGBCameraImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo)
+void xvision_ros2_node::publishRGBCameraImage(std::string sn, const sensor_msgs::msg::Image& image, const sensor_msgs::msg::CameraInfo& cameraInfo)
 {
-    m_rgb_camera_publisher[sn].publish(image);//, cameraInfo);
-    m_rgb_cameraInfo_pub[sn]->publish(cameraInfo);
+    // Only publish if RGB is enabled
+    if (!m_deviceConfig["rgb_enable"]) {
+        return;
+    }
+
+    if (m_rgb_camera_publisher.count(sn) > 0 && m_rgb_cameraInfo_pub.count(sn) > 0) {
+        m_rgb_camera_publisher[sn].publish(image);
+        m_rgb_cameraInfo_pub[sn]->publish(cameraInfo);
+    }
 }
 
-void xvision_ros2_node::publishSGBMImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo)
+void xvision_ros2_node::publishRGBDCameraImage(std::string sn, const sensor_msgs::msg::Image& image, const sensor_msgs::msg::CameraInfo& cameraInfo)
 {
-    m_sgbm_camera_publisher[sn].publish(image);//, cameraInfo);
-    m_sgbm_cameraInfo_pub[sn]->publish(cameraInfo);
+    // Only publish if RGBD is enabled
+    if (!m_deviceConfig["rgbd_enable"]) {
+        return;
+    }
+
+    if (m_rgbd_camera_publisher.count(sn) > 0 && m_rgbd_cameraInfo_pub.count(sn) > 0) {
+        m_rgbd_camera_publisher[sn].publish(image);
+        m_rgbd_cameraInfo_pub[sn]->publish(cameraInfo);
+    }
 }
 
-void xvision_ros2_node::publishSGBMRawImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo)
+void xvision_ros2_node::publishRGBDRawCameraImage(std::string sn, const sensor_msgs::msg::Image& image, const sensor_msgs::msg::CameraInfo& cameraInfo)
 {
-    m_sgbm_raw_camera_publisher[sn].publish(image);//, cameraInfo);
-    m_sgbm_raw_cameraInfo_pub[sn]->publish(cameraInfo);
-}
+    // Only publish if RGBD is enabled
+    if (!m_deviceConfig["rgbd_enable"]) {
+        return;
+    }
 
-void xvision_ros2_node::publishRGBDCameraImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo)
-{
-    m_rgbd_camera_publisher[sn].publish(image);//, cameraInfo);
-    m_rgbd_cameraInfo_pub[sn]->publish(cameraInfo);
-}
-
-void xvision_ros2_node::publishRGBDRawCameraImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo)
-{
-    m_rgbd_raw_camera_publisher[sn].publish(image);//, cameraInfo);
-    m_rgbd_raw_cameraInfo_pub[sn]->publish(cameraInfo);
+    if (m_rgbd_raw_camera_publisher.count(sn) > 0 && m_rgbd_raw_cameraInfo_pub.count(sn) > 0) {
+        m_rgbd_raw_camera_publisher[sn].publish(image);
+        m_rgbd_raw_cameraInfo_pub[sn]->publish(cameraInfo);
+    }
 }
 
 void xvision_ros2_node::publishRGBDRawCameraData(std::string sn, const xv_ros2_msgs::msg::ColorDepth& colorDephData)
 {
-    if(m_rgbd_raw_data_publisher[sn])
-    {
+    // Only publish if RGBD is enabled
+    if (!m_deviceConfig["rgbd_enable"]) {
+        return;
+    }
+
+    if (m_rgbd_raw_data_publisher.count(sn) > 0) {
         m_rgbd_raw_data_publisher[sn]->publish(colorDephData);
     }
 }
 
 void xvision_ros2_node::publishEvent(std::string sn, const xv_ros2_msgs::msg::EventData& eventMsg)
 {
-    if(m_eventPublisher[sn])
-    {
+    // Only publish if event is enabled
+    if (!m_deviceConfig["event_enable"]) {
+        return;
+    }
+
+    if (m_eventPublisher.count(sn) > 0) {
         m_eventPublisher[sn]->publish(eventMsg);
     }
 }
@@ -874,4 +848,30 @@ bool xvision_ros2_node::isFramePublished(const std::string& frame_id)
 void xvision_ros2_node::setFramePublished(const std::string& frame_id)
 {
     m_published_frames.insert(frame_id);
+}
+
+void xvision_ros2_node::publishSGBMImage(std::string sn, const sensor_msgs::msg::Image& image, const sensor_msgs::msg::CameraInfo& cameraInfo)
+{
+    // Only publish if fisheye is enabled (since SGBM depends on fisheye)
+    if (!m_deviceConfig["fisheye_enable"]) {
+        return;
+    }
+
+    if (m_sgbm_camera_publisher.count(sn) > 0 && m_sgbm_cameraInfo_pub.count(sn) > 0) {
+        m_sgbm_camera_publisher[sn].publish(image);
+        m_sgbm_cameraInfo_pub[sn]->publish(cameraInfo);
+    }
+}
+
+void xvision_ros2_node::publishSGBMRawImage(std::string sn, const sensor_msgs::msg::Image& image, const sensor_msgs::msg::CameraInfo& cameraInfo)
+{
+    // Only publish if fisheye is enabled (since SGBM depends on fisheye)
+    if (!m_deviceConfig["fisheye_enable"]) {
+        return;
+    }
+
+    if (m_sgbm_raw_camera_publisher.count(sn) > 0 && m_sgbm_raw_cameraInfo_pub.count(sn) > 0) {
+        m_sgbm_raw_camera_publisher[sn].publish(image);
+        m_sgbm_raw_cameraInfo_pub[sn]->publish(cameraInfo);
+    }
 }

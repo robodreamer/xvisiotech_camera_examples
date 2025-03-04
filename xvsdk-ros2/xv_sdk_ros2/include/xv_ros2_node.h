@@ -55,8 +55,8 @@ public:
     void publishSlamTrajectory(std::string sn, const nav_msgs::msg::Path& path);
     void publishTofCameraImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo);
     void publishRGBCameraImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo);
-    void publishSGBMImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo);
-    void publishSGBMRawImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo);
+    void publishSGBMImage(std::string sn, const sensor_msgs::msg::Image& image, const sensor_msgs::msg::CameraInfo& cameraInfo);
+    void publishSGBMRawImage(std::string sn, const sensor_msgs::msg::Image& image, const sensor_msgs::msg::CameraInfo& cameraInfo);
     void publishRGBDCameraImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo);
     void publishRGBDRawCameraImage(std::string sn, const sensor_msgs::msg::Image& image,const sensor_msgs::msg::CameraInfo& cameraInfo);
     void publishRGBDRawCameraData(std::string sn, const xv_ros2_msgs::msg::ColorDepth& orientationMsg);

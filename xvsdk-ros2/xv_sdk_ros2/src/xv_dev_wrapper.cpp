@@ -27,7 +27,7 @@ void xv_dev_wrapper::init(void)
             initImu();
         }
 
-        if(m_device->orientationStream())
+        if(m_device->orientationStream() && m_node->getConfig("orientation_enable"))
         {
             initOrientationStream();
         }
@@ -44,21 +44,22 @@ void xv_dev_wrapper::init(void)
             initSlam();
         }
 
-        if(m_device->tofCamera())
+        if(m_device->tofCamera() && m_node->getConfig("tof_enable"))
         {
             initTofCamera();
         }
 
-        if(m_device->colorCamera())
+        if(m_device->colorCamera() && m_node->getConfig("rgb_enable"))
         {
             initColorCamera();
         }
 
-        if(m_device->colorCamera() && m_device->tofCamera())
+        if(m_device->colorCamera() && m_device->tofCamera() && m_node->getConfig("rgbd_enable"))
         {
             initColorDepthCamera();
         }
-		if(m_device->eventStream())
+
+        if(m_device->eventStream() && m_node->getConfig("event_enable"))
         {
             initEvent();
         }
