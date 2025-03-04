@@ -106,6 +106,11 @@ private:
     void toRosEventStamped(xv_ros2_msgs::msg::EventData& event, Event const& xvEvent, const std::string& frame_id);
     void toRosButtonStamped(xv_ros2_msgs::msg::ButtonMsg& button, xv::Event const& xvEvent, const std::string& frame_id);
 
+    // Add these helper methods for consistent logging
+    void printInfoMsg(const std::string& msgString) const;
+    void printWarningMsg(const std::string& msgString) const;
+    void printErrorMsg(const std::string& msgString) const;
+
 private:
     xvision_ros2_node* m_node;
     std::shared_ptr<xv::Device> m_device;

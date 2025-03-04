@@ -386,7 +386,7 @@ void xv_dev_wrapper::initEvent()
 void xv_dev_wrapper::toRosEventStamped(xv_ros2_msgs::msg::EventData& event, xv::Event const& xvEvent, const std::string& frame_id)
 {
     if (xvEvent.hostTimestamp < 0) {
-        this->m_node->printWarningMsg("XVSDK-ROS-WRAPPER toRosEventStamped() Warning: negative host-timestamp: " + std::to_string(xvEvent.hostTimestamp));
+        this->printWarningMsg("XVSDK-ROS-WRAPPER toRosEventStamped() Warning: negative host-timestamp: " + std::to_string(xvEvent.hostTimestamp));
     }
 
     event.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
@@ -399,7 +399,7 @@ void xv_dev_wrapper::toRosEventStamped(xv_ros2_msgs::msg::EventData& event, xv::
 void xv_dev_wrapper::toRosButtonStamped(xv_ros2_msgs::msg::ButtonMsg& button, xv::Event const& xvEvent, const std::string& frame_id)
 {
     if (xvEvent.hostTimestamp < 0)
-        this->m_node->printWarningMsg("XVSDK-ROS-WRAPPER toRosButtonStamped() Warning: negative host-timestamp: " + std::to_string(xvEvent.hostTimestamp));
+        this->printWarningMsg("XVSDK-ROS-WRAPPER toRosButtonStamped() Warning: negative host-timestamp: " + std::to_string(xvEvent.hostTimestamp));
 
     button.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
     button.header.frame_id = frame_id;
@@ -1128,7 +1128,7 @@ cv::Mat xv_dev_wrapper::toCvMatRGBD(const DepthColorImage& rgbd)
 sensor_msgs::msg::Image xv_dev_wrapper::toRosImage(const DepthColorImage& xvDepthColorImage, const std::string& frame_id)
 {
     if (xvDepthColorImage.hostTimestamp < 0)
-        std::cerr << "XVSDK-ROS-WRAPPER toRosImage() Error: negative DepthColorImage host-timestamp" << std::endl;
+        this->printWarningMsg("XVSDK-ROS-WRAPPER toRosImage() Error: negative DepthColorImage host-timestamp");
 
     sensor_msgs::msg::Image rosImage;
     rosImage.header.stamp = get_stamp_from_sec(xvDepthColorImage.hostTimestamp > 0.1 ? xvDepthColorImage.hostTimestamp : 0.1);
@@ -1153,7 +1153,7 @@ sensor_msgs::msg::Image xv_dev_wrapper::toRosImage(const DepthColorImage& xvDept
 sensor_msgs::msg::Image xv_dev_wrapper::toRosImageRaw(const DepthColorImage& xvDepthColorImage, const std::string& frame_id)
 {
     if (xvDepthColorImage.hostTimestamp < 0)
-        std::cerr << "XVSDK-ROS-WRAPPER toRosImageRaw() Error: negative DepthColorImage host-timestamp" << std::endl;
+        this->printWarningMsg("XVSDK-ROS-WRAPPER toRosImageRaw() Error: negative DepthColorImage host-timestamp");
 
     sensor_msgs::msg::Image rosImage;
     rosImage.header.stamp = get_stamp_from_sec(xvDepthColorImage.hostTimestamp > 0.1 ? xvDepthColorImage.hostTimestamp : 0.1);
@@ -1297,7 +1297,7 @@ void cslamLocalizedCallback(float percent)
 bool xv_dev_wrapper::saveCslamMap(std::string filename)
 {
     if (mapStream.open(filename.c_str(), std::ios::binary | std::ios::out | std::ios::trunc) == nullptr) {
-        std::cout << "could not create map file" << std::endl;
+        this->printErrorMsg("could not create map file");
         return false;
     }
     return m_device->slam()->saveMapAndSwitchToCslam(mapStream, cslamSavedCallback, cslamLocalizedCallback);
@@ -1306,11 +1306,10 @@ bool xv_dev_wrapper::saveCslamMap(std::string filename)
 bool xv_dev_wrapper::loadCslamMap(std::string filename)
 {
     if (mapStream.open(filename.c_str(), std::ios::binary | std::ios::in) == nullptr) {
-        std::cout << "could not load map file" << std::endl;
+        this->printErrorMsg("could not load map file");
         return false;
     }
     return m_device->slam()->loadMapAndSwitchToCslam(mapStream, cslamSwitchedCallback, cslamLocalizedCallback);
-
 }
 
 xv_ros2_msgs::msg::Controller xv_dev_wrapper::toRosControllerData(const WirelessControllerData data, const std::string& frame_id)
@@ -1334,9 +1333,9 @@ bool xv_dev_wrapper::startController(std::string portAddress)
     {
         if(m_device->wirelessController())
         {
-            std::cout << "controller set port name: " << portAddress << std::endl;
+            this->printInfoMsg("controller set port name: " + portAddress);
             m_device->wirelessController()->setSerialPointName(portAddress);
-            std::cout << "wireless controller start" << std::endl;
+            this->printInfoMsg("wireless controller start");
             m_device->wirelessController()->start();
 
             // Check if map_optical_frame has been published already
@@ -1361,7 +1360,7 @@ bool xv_dev_wrapper::startController(std::string portAddress)
             {
                 if(data.type == xv::WirelessControllerDataType::LEFT)
                 {
-                    // std::cout << "publish left controller pose data" << std::endl;
+                    // this->printInfoMsg("publish left controller pose data");
                     geometry_msgs::msg::PoseStamped poseSteamped = to_ros_poseEdgeStamped(data.pose, this->m_node->getFrameID("map_optical_frame"));
                     this->m_node->publishLeftControllerPose(m_sn,poseSteamped);
 
@@ -1375,13 +1374,13 @@ bool xv_dev_wrapper::startController(std::string portAddress)
                     }
                     this->m_node->broadcasterTfTransform(transform);
 
-                    // std::cout << "publish left controller key data" << std::endl;
+                    // this->printInfoMsg("publish left controller key data");
                     xv_ros2_msgs::msg::Controller controllerData = toRosControllerData(data, this->m_node->getFrameID("map_optical_frame"));
                     this->m_node->publishLeftControllerData(m_sn, controllerData);
                 }
                 else if(data.type == xv::WirelessControllerDataType::RIGHT)
                 {
-                    // std::cout << "publish right controller pose data" << std::endl;
+                    // this->printInfoMsg("publish right controller pose data");
                     geometry_msgs::msg::PoseStamped poseSteamped = to_ros_poseEdgeStamped(data.pose, this->m_node->getFrameID("map_optical_frame"));
                     this->m_node->publishRightControllerPose(m_sn, poseSteamped);
 
@@ -1395,7 +1394,7 @@ bool xv_dev_wrapper::startController(std::string portAddress)
                     }
                     this->m_node->broadcasterTfTransform(transform);
 
-                    // std::cout << "publish right controller key data" << std::endl;
+                    // this->printInfoMsg("publish right controller key data");
                     xv_ros2_msgs::msg::Controller controllerData = toRosControllerData(data, this->m_node->getFrameID("map_optical_frame"));
                     this->m_node->publishRightControllerData(m_sn, controllerData);
                 }
@@ -1404,7 +1403,7 @@ bool xv_dev_wrapper::startController(std::string portAddress)
         }
         else
         {
-            std::cout << "wireless controller feature is invalid" << std::endl;
+            this->printInfoMsg("wireless controller feature is invalid");
             return false;
         }
     }
@@ -1416,4 +1415,20 @@ bool xv_dev_wrapper::stopController()
     m_device->wirelessController()->unregisterWirelessControllerDataCallback(m_controllerCBID);
     m_device->wirelessController()->stop();
     return true;
+}
+
+// Add these helper methods for consistent logging
+void xv_dev_wrapper::printInfoMsg(const std::string& msgString) const
+{
+    m_node->printInfoMsg(msgString);
+}
+
+void xv_dev_wrapper::printWarningMsg(const std::string& msgString) const
+{
+    m_node->printWarningMsg(msgString);
+}
+
+void xv_dev_wrapper::printErrorMsg(const std::string& msgString) const
+{
+    m_node->printErrorMsg(msgString);
 }

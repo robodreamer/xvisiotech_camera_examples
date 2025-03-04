@@ -371,7 +371,7 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
 
 void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
 {
-    std::cout << "Initializing controller topics for " << sn << std::endl;
+    RCLCPP_INFO(this->get_logger(), "Initializing controller topics for %s", sn.c_str());
 
     // Create controller publishers
     std::string controllerLeftPose = "xv_sdk/SN" + sn +"/leftControllerPose";
@@ -394,50 +394,8 @@ void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
     m_controller_right_data_publisher.emplace(sn, rightControllerDataPub);
     m_controller_right_data_publisher[sn] = this->create_publisher<xv_ros2_msgs::msg::Controller>(controllerRightData.c_str(), 10);
 
-    std::cout << "start controller port " << this->getFrameID("controller_port") << std::endl;
+    RCLCPP_INFO(this->get_logger(), "Starting controller on port %s", this->getFrameID("controller_port").c_str());
     m_controllerMap[sn]->startController(this->getFrameID("controller_port"));
-    // auto controller_start_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::ControllerStart::Request> req,
-    //                                     std::shared_ptr<xv_ros2_msgs::srv::ControllerStart::Response> res) -> bool
-    // {
-    //     std::cout << "port address: " << req->portaddress << std::endl;
-    //     bool success = m_controllerMap[sn]->startController(req->portaddress);
-    //     if(success)
-    //     {
-    //         res->success = true;
-    //         res->message = "start controller ok";
-    //     }
-    //     else
-    //     {
-    //         res->success = false;
-    //         res->message = "could not start controller";
-    //     }
-    //     return success;
-    // };
-    // std::string controllerStart = "xv_sdk/SN" + sn +"/controller_start";
-    // rclcpp::Service<xv_ros2_msgs::srv::ControllerStart>::SharedPtr startControllerSrv;
-    // m_controller_start.emplace(sn, startControllerSrv);
-    // m_controller_start[sn] = this->create_service<xv_ros2_msgs::srv::ControllerStart>(controllerStart.c_str(), controller_start_service_callback);
-
-    // auto controller_stop_service_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::ControllerStop::Request> /*req*/,
-    //                                     std::shared_ptr<xv_ros2_msgs::srv::ControllerStop::Response> res) -> bool
-    // {
-    //     bool success = m_controllerMap[sn]->stopController();
-    //     if(success)
-    //     {
-    //         res->success = true;
-    //         res->message = "stop controller ok";
-    //     }
-    //     else
-    //     {
-    //         res->success = false;
-    //         res->message = "could not stop controller";
-    //     }
-    //     return success;
-    // };
-    // std::string controllerStop = "xv_sdk/SN" + sn +"/controller_stop";
-    // rclcpp::Service<xv_ros2_msgs::srv::ControllerStop>::SharedPtr stopControllerSrv;
-    // m_controller_stop.emplace(sn, stopControllerSrv);
-    // m_controller_stop[sn] = this->create_service<xv_ros2_msgs::srv::ControllerStop>(controllerStop.c_str(), controller_stop_service_callback);
 }
 
 void xvision_ros2_node::initFrameIDParameter(void)
@@ -521,7 +479,7 @@ void xvision_ros2_node::get_device_config_parameters(void)
     }
     for(auto &config : m_deviceConfig)
     {
-        std::cout<<config.first<< ":"<< config.second<<std::endl;
+        RCLCPP_INFO(this->get_logger(), "%s: %s", config.first.c_str(), config.second ? "true" : "false");
     }
 }
 
@@ -725,10 +683,10 @@ void xvision_ros2_node::watchDevices(void)
             m_devSerialNumber = pair.first;
             if(m_serialNumbers.empty())
             {
-                std::cout << "find new device " << m_devSerialNumber << std::endl;
+                RCLCPP_INFO(this->get_logger(), "find new device %s", m_devSerialNumber.c_str());
                 m_serialNumbers.push_back(m_devSerialNumber);
                 m_deviceMap.emplace(m_devSerialNumber, std::make_shared<xv_dev_wrapper>(this, device_map[m_devSerialNumber], m_devSerialNumber, 1));
-                std::cout << "init device topic" << std::endl;
+                RCLCPP_INFO(this->get_logger(), "init device topic");
                 initTopicAndServer(m_devSerialNumber);
             }
             else
@@ -736,10 +694,10 @@ void xvision_ros2_node::watchDevices(void)
                 auto it = find(m_serialNumbers.begin(), m_serialNumbers.end(), m_devSerialNumber);
                 if(it == m_serialNumbers.end())
                 {
-                    std::cout << "find new device " << m_devSerialNumber << std::endl;
+                    RCLCPP_INFO(this->get_logger(), "find new device %s", m_devSerialNumber.c_str());
                     m_serialNumbers.push_back(m_devSerialNumber);
                     m_deviceMap.emplace(m_devSerialNumber, std::make_shared<xv_dev_wrapper>(this, device_map[m_devSerialNumber], m_devSerialNumber, 1));
-                    std::cout << "init device topic" << std::endl;
+                    RCLCPP_INFO(this->get_logger(), "init device topic");
                     initTopicAndServer(m_devSerialNumber);
                 }
             }
@@ -776,12 +734,14 @@ void xvision_ros2_node::watchControllers(void)
             {
                 if(m_controllerSerials.empty())
                 {
-                    std::cout << "new controller device" << std::endl;
+                    RCLCPP_INFO(this->get_logger(), "New controller device detected: %s", m_controllerSerialNumber.c_str());
                     m_controllerSerials.push_back(m_controllerSerialNumber);
                     m_controllerMap.emplace(m_controllerSerialNumber, std::make_shared<xv_dev_wrapper>(this, controller_map[pair.first], m_controllerSerialNumber, 2));
                     // Start the controller before creating publishers
                     if (m_controllerMap[m_controllerSerialNumber]->startController(this->getFrameID("controller_port"))) {
                         initControllerTopicAndServer(m_controllerSerialNumber);
+                    } else {
+                        RCLCPP_ERROR(this->get_logger(), "Failed to start controller: %s", m_controllerSerialNumber.c_str());
                     }
                 }
                 else
@@ -789,12 +749,14 @@ void xvision_ros2_node::watchControllers(void)
                     auto it = find(m_controllerSerials.begin(), m_controllerSerials.end(), m_controllerSerialNumber);
                     if(it == m_controllerSerials.end())
                     {
-                        std::cout << "new controller device" << std::endl;
+                        RCLCPP_INFO(this->get_logger(), "New controller device detected: %s", m_controllerSerialNumber.c_str());
                         m_controllerSerials.push_back(m_controllerSerialNumber);
-                        m_controllerMap.emplace(m_controllerSerialNumber, std::make_shared<xv_dev_wrapper>(this, controller_map[m_controllerSerialNumber], m_controllerSerialNumber, 2));
+                        m_controllerMap.emplace(m_controllerSerialNumber, std::make_shared<xv_dev_wrapper>(this, controller_map[pair.first], m_controllerSerialNumber, 2));
                         // Start the controller before creating publishers
                         if (m_controllerMap[m_controllerSerialNumber]->startController(this->getFrameID("controller_port"))) {
                             initControllerTopicAndServer(m_controllerSerialNumber);
+                        } else {
+                            RCLCPP_ERROR(this->get_logger(), "Failed to start controller: %s", m_controllerSerialNumber.c_str());
                         }
                     }
                 }
@@ -802,7 +764,7 @@ void xvision_ros2_node::watchControllers(void)
         } else {
             // If no controllers found, clean up existing controller resources
             if (!m_controllerSerials.empty()) {
-                std::cout << "Controllers disconnected, cleaning up resources" << std::endl;
+                RCLCPP_INFO(this->get_logger(), "Controllers disconnected, cleaning up resources");
                 for (const auto& sn : m_controllerSerials) {
                     if (m_controllerMap.count(sn) > 0) {
                         m_controllerMap[sn]->stopController();
