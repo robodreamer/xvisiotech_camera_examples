@@ -76,9 +76,9 @@ private:
     sensor_msgs::msg::CameraInfo toRosCameraInfo(const xv::UnifiedCameraModel* const ucm,
                                                  const xv::PolynomialDistortionCameraModel* const pdcm);
     sensor_msgs::msg::CameraInfo toRosCameraInfo(const xv::SpecialUnifiedCameraModel* const seucm);
-    bool registerFECallbackFunc(void);
+    void registerFECallbackFunc(void);
     bool registerFEAntiDistortionCallbackFunc(void);
-    bool registerSGBMCallbackFunc(void);
+    void registerSGBMCallbackFunc(void);
     sensor_msgs::msg::Image changeFEGrayScaleImage2RosImage(const GrayScaleImage& xvGrayImage, double timestamp, const std::string& frame_id);
     void getFECalibration();
     double get_sec(const builtin_interfaces::msg::Duration& prediction)const;
@@ -109,6 +109,7 @@ private:
 private:
     xvision_ros2_node* m_node;
     std::shared_ptr<xv::Device> m_device;
+    std::shared_ptr<xv::FisheyeCameras> m_fisheye_cameras;
     std::vector<xv::Calibration> m_xvFisheyesCalibs;
     std::vector<std::map<int /*height*/, sensor_msgs::msg::CameraInfo>> m_fisheyeCameraInfos;
     bool m_slam_pose_enable;

@@ -30,7 +30,7 @@
 #include "xv_ros2_msgs/msg/controller.hpp"
 #include "xv_ros2_msgs/msg/event_data.hpp"
 #include "xv_ros2_msgs/msg/button_msg.hpp"
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include "xv_dev_wrapper.h"
 using namespace xv;
 using rosImage = sensor_msgs::msg::Image;
@@ -45,6 +45,7 @@ public:
     void get_frameId_parameters(void);
     void get_device_config_parameters(void);
     void printInfoMsg(const std::string msgString) const;
+    void printWarningMsg(const std::string msgString) const;
     void printErrorMsg(const std::string msgString) const;
     void publishImu(std::string sn, const sensor_msgs::msg::Imu &imuMsg);
     void publisheOrientation(std::string sn, const xv_ros2_msgs::msg::OrientationStamped& orientationMsg);
@@ -66,8 +67,8 @@ public:
     void publishRightControllerPose(std::string sn, const geometry_msgs::msg::PoseStamped& pose);
     void publishLeftControllerData(std::string sn, const xv_ros2_msgs::msg::Controller& controllerMsg);
     void publishRightControllerData(std::string sn, const xv_ros2_msgs::msg::Controller& controllerMsg);
-    void publisheEvent(std::string sn, const xv_ros2_msgs::msg::EventData& eventMsg);
-    void publisheButton(std::string sn, int buttonType, const xv_ros2_msgs::msg::ButtonMsg& buttonMsg);
+    void publishEvent(std::string sn, const xv_ros2_msgs::msg::EventData& eventMsg);
+    void publishButton(std::string sn, int buttonType, const xv_ros2_msgs::msg::ButtonMsg& buttonMsg);
     void broadcasterStaticTfTransform(const geometry_msgs::msg::TransformStamped & transform);
     bool isFramePublished(const std::string& frame_id);
     void setFramePublished(const std::string& frame_id);

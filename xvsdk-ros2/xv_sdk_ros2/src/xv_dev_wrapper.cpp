@@ -34,6 +34,7 @@ void xv_dev_wrapper::init(void)
 
         if(m_device->fisheyeCameras())
         {
+            m_fisheye_cameras = m_device->fisheyeCameras();
             initFisheyeCameras();
         }
 
@@ -100,22 +101,32 @@ bool xv_dev_wrapper::getImuOriAt(xv_ros2_msgs::msg::OrientationStamped& oriStamp
 
 bool xv_dev_wrapper::start_slam(void)
 {
-    bool ret = false;
+    bool success = true;
     if(this->m_device->slam())
     {
-        ret = this->m_device->slam()->start();
+        success = this->m_device->slam()->start();
     }
-    return ret;
+    else
+    {
+        success = false;
+        this->m_node->printErrorMsg("slam is not available");
+    }
+    return success;
 }
 
 bool xv_dev_wrapper::stop_slam(void)
 {
-    bool ret = false;
+    bool success = true;
     if(this->m_device->slam())
     {
         this->m_device->slam()->stop();
     }
-    return false;
+    else
+    {
+        success = false;
+        this->m_node->printErrorMsg("slam is not available");
+    }
+    return success;
 }
 
 bool xv_dev_wrapper::slam_get_pose(geometry_msgs::msg::PoseStamped& poseSteamped, const builtin_interfaces::msg::Duration& prediction)
@@ -179,11 +190,6 @@ void xv_dev_wrapper::initOrientationStream(void)
     {
         if (xvOrientation.hostTimestamp < 0)
         {
-            this->m_node->printErrorMsg(std::string("XVSDK-ROS-WRAPPER Warning: negative Orientation host-timestamp"));
-            return;
-        }
-        if (xvOrientation.hostTimestamp < 0)
-        {
             this->m_node->printErrorMsg(std::string("XVSDK-ROS-WRAPPER toRosOrientationStamped() Error: negative Orientation host-timestamp"));
         }
         xv_ros2_msgs::msg::OrientationStamped orientationStamped;
@@ -196,8 +202,8 @@ void xv_dev_wrapper::initOrientationStream(void)
 void xv_dev_wrapper::initFisheyeCameras(void)
 {
     getFECalibration();
+    m_fisheye_cameras->start();
     registerFECallbackFunc();
-    // registerFEAntiDistortionCallbackFunc();
     // registerSGBMCallbackFunc();
 }
 
@@ -369,34 +375,35 @@ void xv_dev_wrapper::initEvent()
     {
         xv_ros2_msgs::msg::EventData eventMsg;
         toRosEventStamped(eventMsg, event, this->m_node->getFrameID("imu_optical_frame"));
-        this->m_node->publisheEvent(m_sn, eventMsg);
+        this->m_node->publishEvent(m_sn, eventMsg);
 
         xv_ros2_msgs::msg::ButtonMsg buttonMsg;
         toRosButtonStamped(buttonMsg, event, this->m_node->getFrameID("imu_optical_frame"));
-        this->m_node->publisheButton(m_sn, (int)event.type, buttonMsg);
+        this->m_node->publishButton(m_sn, (int)event.type, buttonMsg);
     });
 }
 
 void xv_dev_wrapper::toRosEventStamped(xv_ros2_msgs::msg::EventData& event, xv::Event const& xvEvent, const std::string& frame_id)
 {
-  if (xvEvent.hostTimestamp < 0)
-    this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER toRosEventStamped() Error: negative Orientation host-timestamp");
+    if (xvEvent.hostTimestamp < 0) {
+        this->m_node->printWarningMsg("XVSDK-ROS-WRAPPER toRosEventStamped() Warning: negative host-timestamp: " + std::to_string(xvEvent.hostTimestamp));
+    }
 
-  event.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
-  event.header.frame_id = frame_id;
+    event.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
+    event.header.frame_id = frame_id;
 
-  event.type = xvEvent.type;
-  event.state = xvEvent.state;
+    event.type = xvEvent.type;
+    event.state = xvEvent.state;
 }
 
 void xv_dev_wrapper::toRosButtonStamped(xv_ros2_msgs::msg::ButtonMsg& button, xv::Event const& xvEvent, const std::string& frame_id)
 {
-  if (xvEvent.hostTimestamp < 0)
-    this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER toRosButtonStamped() Error: negative Orientation host-timestamp");
+    if (xvEvent.hostTimestamp < 0)
+        this->m_node->printWarningMsg("XVSDK-ROS-WRAPPER toRosButtonStamped() Warning: negative host-timestamp: " + std::to_string(xvEvent.hostTimestamp));
 
-  button.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
-  button.header.frame_id = frame_id;
-  button.state = (bool)xvEvent.state;
+    button.header.stamp = get_stamp_from_sec(xvEvent.hostTimestamp > 0.1 ? xvEvent.hostTimestamp : 0.1);
+    button.header.frame_id = frame_id;
+    button.state = (bool)xvEvent.state;
 }
 
 sensor_msgs::msg::CameraInfo xv_dev_wrapper::toRosCameraInfo(const xv::UnifiedCameraModel* const ucm,
@@ -501,11 +508,10 @@ void xv_dev_wrapper::formatXvOriToRosOriStamped(xv_ros2_msgs::msg::OrientationSt
     rosOrientation.angular_velocity.z = xvOrientation.angularVelocity()[2];
 }
 
-bool xv_dev_wrapper::registerFECallbackFunc(void)
+void xv_dev_wrapper::registerFECallbackFunc(void)
 {
     this->m_node->printInfoMsg("fisheye start");
-    m_device->fisheyeCameras()->start();
-    m_device->fisheyeCameras()->registerCallback([this](const FisheyeImages & xvFisheyeImages)
+    m_fisheye_cameras->registerCallback([this](const FisheyeImages & xvFisheyeImages)
     {
         for (int i = 0; i < int(xvFisheyeImages.images.size()); ++i)
         {
@@ -547,49 +553,6 @@ bool xv_dev_wrapper::registerFECallbackFunc(void)
     });
 }
 
-bool xv_dev_wrapper::registerFEAntiDistortionCallbackFunc(void)
-{
-    // m_device->fisheyeCameras()->registerAntiDistortionCallback([this](const FisheyeImages & xvFisheyeImages)
-    // {
-    //     for (int i = 0; i < int(xvFisheyeImages.images.size()); ++i)
-    //     {
-    //         const auto& xvGrayImage = xvFisheyeImages.images[i];
-
-    //         if (!xvGrayImage.data)
-    //         {
-    //             this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: no FisheyeImages data");
-    //             return;
-    //         }
-    //         if (xvFisheyeImages.hostTimestamp < 0)
-    //         {
-    //             this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: negative FisheyeImages host-timestamp");
-    //             return;
-    //         }
-
-    //         auto img = changeFEGrayScaleImage2RosImage(xvGrayImage, xvFisheyeImages.hostTimestamp, "");
-
-    //         if (i == 0)
-    //         {
-    //             img.header.frame_id = this->m_node->getFrameID("fisheye_left_AntiDistortion_optical_frame");
-
-    //             sensor_msgs::msg::CameraInfo camInfo = m_fisheyeCameraInfos[i][img.height];
-    //             camInfo.header.frame_id = img.header.frame_id;
-    //             camInfo.header.stamp = img.header.stamp;
-    //             this->m_node->publishFEAntiDistortionImage(m_sn, img, camInfo, LEFT_IMAGE);
-    //         }
-
-    //         if (i == 1)
-    //         {
-    //             img.header.frame_id = this->m_node->getFrameID("fisheye_right_AntiDistortion_optical_frame");
-
-    //             sensor_msgs::msg::CameraInfo camInfo = m_fisheyeCameraInfos[i][img.height];
-    //             camInfo.header.frame_id = img.header.frame_id;
-    //             camInfo.header.stamp = img.header.stamp;
-    //             this->m_node->publishFEAntiDistortionImage(m_sn, img, camInfo, RIGHT_IMAGE);
-    //         }
-    //     }
-    // });
-}
 
 static struct xv::sgbm_config global_config = {
     1 ,//enable_dewarp
@@ -609,7 +572,7 @@ static struct xv::sgbm_config global_config = {
     100, //min_distance
 };
 
-bool xv_dev_wrapper::registerSGBMCallbackFunc(void)
+void xv_dev_wrapper::registerSGBMCallbackFunc(void)
 {
     m_device->sgbmCamera()->start(global_config);
     if (!m_device->fisheyeCameras()->calibration().empty())
@@ -655,7 +618,7 @@ sensor_msgs::msg::Image xv_dev_wrapper::changeFEGrayScaleImage2RosImage(const Gr
         m_node->printInfoMsg("XVSDK-ROS-WRAPPER toRosImage() Error: negative timestamp");
     }
 
-   sensor_msgs::msg::Image rosImage;
+    sensor_msgs::msg::Image rosImage;
     rosImage.header.stamp = get_stamp_from_sec(timestamp);
     rosImage.header.frame_id = frame_id;
     rosImage.height = xvGrayImage.height;
@@ -902,28 +865,12 @@ sensor_msgs::msg::Image xv_dev_wrapper::toRosImage(const DepthImage& xvDepthImag
     copy = std::vector<uint8_t>(xvDepthImage.data.get(), xvDepthImage.data.get() + nbPx*sizeof(float));
   } else if (xvDepthImage.type == xv::DepthImage::Type::Depth_16) {
       // static float cov = 7.5 / 2494.0; // XXX *0.001
-    //   const short* d = reinterpret_cast<const short*>(xvDepthImage.data.get());
-    //   float* fl = reinterpret_cast<float*>(&copy[0]);
-    //   for (int i = 0; i < nbPx; i++) {
-    //       fl[i] = (float)d[i] * 0.001;
-    //   }
       // rosImage.data = std::vector<uint8_t>(fl, fl + nbPx*sizeof(float));
       rosImage.encoding = sensor_msgs::image_encodings::TYPE_16SC1;
       rosImage.step = xvDepthImage.width * sizeof(short); /// bytes for 1 line
       copy = std::vector<uint8_t>(xvDepthImage.data.get(), xvDepthImage.data.get() + nbPx*sizeof(short));
   }
   rosImage.data = std::move(copy);
-
-//   float* depth = reinterpret_cast<float*>(&rosImage.data[0]);
-//   const float* const depth_end = reinterpret_cast<float*>(&*rosImage.data.end());
-//   for (; depth < depth_end; ++depth)
-//   {
-//     if (*depth < .2f)
-//       *depth = -std::numeric_limits<float>::infinity();
-//     else if (*depth > 10.f)
-//       *depth = std::numeric_limits<float>::infinity();
-//   }
-
   return rosImage;
 }
 
@@ -1302,13 +1249,13 @@ void xv_dev_wrapper::toRosColorDepthData(xv_ros2_msgs::msg::ColorDepth& colorDep
     {
         if (m_xvDepthImage.type == xv::DepthImage::Type::Depth_32) {
             const auto depth = reinterpret_cast<float const*>(m_xvDepthImage.data.get());
-            for(int i = 0; i < m_xvDepthImage.height*m_xvDepthImage.width; i++)
+            for(std::size_t i = 0; i < m_xvDepthImage.height*m_xvDepthImage.width; i++)
             {
                 colorDephData.depth.push_back(depth[i]);
             }
         } else if (m_xvDepthImage.type == xv::DepthImage::Type::Depth_16) {
             const auto depth = reinterpret_cast<short const*>(m_xvDepthImage.data.get());
-            for(int i = 0; i < m_xvDepthImage.height*m_xvDepthImage.width; i++)
+            for(std::size_t i = 0; i < m_xvDepthImage.height*m_xvDepthImage.width; i++)
             {
                 colorDephData.depth.push_back((float)depth[i]/1000);
             }
@@ -1377,6 +1324,7 @@ xv_ros2_msgs::msg::Controller xv_dev_wrapper::toRosControllerData(const Wireless
     controllerData.rockerx = data.rocker_x;
     controllerData.rockery = data.rocker_y;
     controllerData.key = data.key;
+
     return controllerData;
 }
 
