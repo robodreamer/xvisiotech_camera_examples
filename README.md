@@ -78,6 +78,33 @@ You can also visualize the camera pose in RViz (in the new shell):
 rviz2 -d ./xvisio-camera-test.rviz
 ```
 
+### Optional Features
+
+The XvisioTech camera driver supports several optional features that can be enabled or disabled through launch parameters. By default, most features are disabled to reduce CPU usage and bandwidth. You can enable specific features based on your requirements.
+
+To enable a feature, add the corresponding parameter to the launch command:
+
+```bash
+ros2 launch xv_sdk_ros2 xv_sdk_node_launch.py <parameter_name>:=true
+```
+
+Available parameters:
+
+- **fisheye_enable**: Enable fisheye camera images (default: false)
+- **rgb_enable**: Enable RGB camera images (default: false)
+- **tof_enable**: Enable Time-of-Flight depth camera (default: false)
+- **rgbd_enable**: Enable RGB-D combined data (default: false)
+- **button_states_enable**: Enable button state publishing (default: false)
+- **slam_pose_enable**: Enable SLAM pose publishing (default: true)
+
+For example, to enable fisheye cameras and RGB images (for DS-80 cameras):
+
+```bash
+ros2 launch xv_sdk_ros2 xv_sdk_node_launch.py fisheye_enable:=true rgb_enable:=true
+```
+
+Enabling these features will make the corresponding topics available for subscription. Disabling them will prevent the topics from being created, reducing CPU usage and network bandwidth.
+
 ## Update Firmware
 
 If you just received the camera, you may need to update the firmware to the latest version.
@@ -91,6 +118,8 @@ Wait until `Done` is displayed in the terminal to complete the firmware update. 
 
 
 ## Instructions with Manual Installation
+
+This section is only for reference. We recommend using the Docker container as it is easier to install and use.
 
 ### Prerequisites
 
@@ -201,3 +230,6 @@ For more information on the XvisioTech cameras and their features, please refer 
 
 [Purchasing Xvisio Camera Modules (XR-50, DS-80) on Mouser Electronics Website](https://www.mouser.com/c/optoelectronics/cameras-accessories/cameras-camera-modules/?m=Xvisio&product=Camera%20Modules&product%20type=AI%2C%20CV%2C%20VSLAM)
 
+## Documentation
+
+For detailed information about changes between versions, please see the [Changelog](CHANGELOG.md).
