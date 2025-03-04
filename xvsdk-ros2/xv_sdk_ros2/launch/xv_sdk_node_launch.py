@@ -4,9 +4,7 @@ import launch.actions
 import launch_ros.actions
 
 def generate_launch_description():
-    #imu_linear_acceleration = launch.substitutions.LaunchConfiguration('imu_linear_acceleration', default='0.0')
-    #imu_angular_velocity = launch.substitutions.LaunchConfiguration('imu_angular_velocity', default='0.0')
-    slam_path_enable = launch.substitutions.LaunchConfiguration('slam_path_enable', default='true')
+    slam_path_enable = launch.substitutions.LaunchConfiguration('slam_path_enable', default='false')
     slam_pose_enable = launch.substitutions.LaunchConfiguration('slam_pose_enable', default='true')
     fisheye_enable = launch.substitutions.LaunchConfiguration('fisheye_enable', default='false')
     button_states_enable = launch.substitutions.LaunchConfiguration('button_states_enable', default='false')

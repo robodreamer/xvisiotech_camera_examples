@@ -22,20 +22,22 @@ void xvision_ros2_node::init(void)
 
 void xvision_ros2_node::initTopicAndServer(std::string sn)
 {
-    std::string imuPubName = "xv_sdk/SN" + sn +"/imu";
+    // IMU publisher
+    std::string imuPublisherTopic = "xv_sdk/SN" + sn +"/imu";
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuPublisher;
     m_imuPublisher.emplace(sn, imuPublisher);
-    m_imuPublisher[sn] = this->create_publisher<sensor_msgs::msg::Imu>(imuPubName.c_str(), 10);
+    m_imuPublisher[sn] = this->create_publisher<sensor_msgs::msg::Imu>(imuPublisherTopic.c_str(), 10);
 
     // Only create orientation publisher if enabled
     if (m_deviceConfig["orientation_enable"]) {
-        std::string oriPubName = "xv_sdk/SN" + sn +"/orientation";
-        rclcpp::Publisher<xv_ros2_msgs::msg::OrientationStamped>::SharedPtr orienPublisher;
-        m_orientationPublisher.emplace(sn, orienPublisher);
-        m_orientationPublisher[sn] = this->create_publisher<xv_ros2_msgs::msg::OrientationStamped>(oriPubName.c_str(),1);
+        std::string orientationPublisherTopic = "xv_sdk/SN" + sn +"/orientation";
+        rclcpp::Publisher<xv_ros2_msgs::msg::OrientationStamped>::SharedPtr orientationPublisher;
+        m_orientationPublisher.emplace(sn, orientationPublisher);
+        m_orientationPublisher[sn] = this->create_publisher<xv_ros2_msgs::msg::OrientationStamped>(orientationPublisherTopic.c_str(),1);
     }
 
-    auto imuSensor_startOri_callBack =[this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+    // Start orientation service
+    auto imuSensor_startOrientation_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
         bool success = m_deviceMap[sn] ? m_deviceMap[sn]->startImuOri() : false;
@@ -43,12 +45,13 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
         res->message = success ? "successed" : "failed";
         return success;
     };
-    std::string oriStart = "xv_sdk/SN" + sn +"/start_orientation";
-    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr startOrienSrv;
-    m_service_imuSensor_startOri.emplace(sn, startOrienSrv);
-    m_service_imuSensor_startOri[sn] = this->create_service<std_srvs::srv::Trigger>(oriStart.c_str(), imuSensor_startOri_callBack);
+    std::string startOrientationService = "xv_sdk/SN" + sn +"/start_orientation";
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr startOrientationServiceHandle;
+    m_service_imuSensor_startOri.emplace(sn, startOrientationServiceHandle);
+    m_service_imuSensor_startOri[sn] = this->create_service<std_srvs::srv::Trigger>(startOrientationService.c_str(), imuSensor_startOrientation_callback);
 
-    auto imuSensor_stopOri_callBack =[this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+    // Stop orientation service
+    auto imuSensor_stopOrientation_callback = [this, sn](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
                                         std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> bool
     {
         bool success =  m_deviceMap[sn] ? m_deviceMap[sn]->stopImuOri() : false;
@@ -56,30 +59,32 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
         res->message = success ? "successed" : "failed";
         return success;
     };
-    std::string oriStop = "xv_sdk/SN" + sn +"/stop_orientation";
-    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stopOrienSrv;
-    m_service_imuSensor_stopOri.emplace(sn, stopOrienSrv);
-    m_service_imuSensor_stopOri[sn] = this->create_service<std_srvs::srv::Trigger>(oriStop.c_str(), imuSensor_stopOri_callBack);
+    std::string stopOrientationService = "xv_sdk/SN" + sn +"/stop_orientation";
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr stopOrientationServiceHandle;
+    m_service_imuSensor_stopOri.emplace(sn, stopOrientationServiceHandle);
+    m_service_imuSensor_stopOri[sn] = this->create_service<std_srvs::srv::Trigger>(stopOrientationService.c_str(), imuSensor_stopOrientation_callback);
 
-    auto imuSensor_getOri_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetOrientation_Request> req,
+    // Get orientation service
+    auto imuSensor_getOrientation_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetOrientation_Request> req,
                                           std::shared_ptr<xv_ros2_msgs::srv::GetOrientation_Response> res) -> bool
     {
         return m_deviceMap[sn] ? m_deviceMap[sn]->getImuOri(res->orientation, req->prediction) : false;
     };
-    std::string getOri = "xv_sdk/SN" + sn +"/get_orientation";
-    rclcpp::Service<xv_ros2_msgs::srv::GetOrientation>::SharedPtr oriGetCallback;
-    m_service_imuSensor_getOri.emplace(sn, oriGetCallback);
-    m_service_imuSensor_getOri[sn] = this->create_service<xv_ros2_msgs::srv::GetOrientation>(getOri.c_str(), imuSensor_getOri_callback);
+    std::string getOrientationService = "xv_sdk/SN" + sn +"/get_orientation";
+    rclcpp::Service<xv_ros2_msgs::srv::GetOrientation>::SharedPtr getOrientationServiceHandle;
+    m_service_imuSensor_getOri.emplace(sn, getOrientationServiceHandle);
+    m_service_imuSensor_getOri[sn] = this->create_service<xv_ros2_msgs::srv::GetOrientation>(getOrientationService.c_str(), imuSensor_getOrientation_callback);
 
-    auto imuSensor_getOriAt_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetOrientationAt_Request> req,
+    // Get orientation at time service
+    auto imuSensor_getOrientationAt_callback = [this, sn](const std::shared_ptr<xv_ros2_msgs::srv::GetOrientationAt_Request> req,
                                     std::shared_ptr<xv_ros2_msgs::srv::GetOrientationAt_Response> res) -> bool
     {
         return m_deviceMap[sn] ? m_deviceMap[sn]->getImuOriAt(res->orientation, req->timestamp) : false;
     };
-    std::string getOriAt = "xv_sdk/SN" + sn +"/get_orientation_at";
-    rclcpp::Service<xv_ros2_msgs::srv::GetOrientationAt>::SharedPtr oriGetAtCallback;
-    m_service_imuSensor_getOriAt.emplace(sn, oriGetAtCallback);
-    m_service_imuSensor_getOriAt[sn] = this->create_service<xv_ros2_msgs::srv::GetOrientationAt>(getOriAt.c_str(), imuSensor_getOriAt_callback);
+    std::string getOrientationAtService = "xv_sdk/SN" + sn +"/get_orientation_at";
+    rclcpp::Service<xv_ros2_msgs::srv::GetOrientationAt>::SharedPtr getOrientationAtServiceHandle;
+    m_service_imuSensor_getOriAt.emplace(sn, getOrientationAtServiceHandle);
+    m_service_imuSensor_getOriAt[sn] = this->create_service<xv_ros2_msgs::srv::GetOrientationAt>(getOrientationAtService.c_str(), imuSensor_getOrientationAt_callback);
 
     // Only create fisheye publishers if enabled
     if (m_deviceConfig["fisheye_enable"]) {
@@ -181,12 +186,13 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
         m_slam_pose_publisher[sn] = this->create_publisher<geometry_msgs::msg::PoseStamped>(slamPose.c_str(), 10);
     }
 
+    // Only create trajectory publisher if slam_path_enable is true
     if(m_deviceConfig["slam_path_enable"])
     {
-        std::string trajectory = "xv_sdk/SN" + sn +"/trajectory";
-        rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr slamPathPub;
-        m_slam_path_publisher.emplace(sn, slamPathPub);
-        m_slam_path_publisher[sn] = this->create_publisher<nav_msgs::msg::Path>(trajectory.c_str(), 1);
+        std::string trajectoryTopic = "xv_sdk/SN" + sn +"/trajectory";
+        rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr slamPathPublisher;
+        m_slam_path_publisher.emplace(sn, slamPathPublisher);
+        m_slam_path_publisher[sn] = this->create_publisher<nav_msgs::msg::Path>(trajectoryTopic.c_str(), 1);
     }
 
     // Only create ToF publishers if enabled
