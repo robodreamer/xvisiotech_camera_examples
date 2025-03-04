@@ -345,33 +345,40 @@ void xvision_ros2_node::initTopicAndServer(std::string sn)
     m_eventPublisher.emplace(sn, eventPublisher);
     m_eventPublisher[sn] = this->create_publisher<xv_ros2_msgs::msg::EventData>(eventName.c_str(),1);
 
-    std::string buttonName1 = "xv_sdk/SN" + sn +"/button1";
-    rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher1;
-    m_buttonPublisher1.emplace(sn, buttonPublisher1);
-    m_buttonPublisher1[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName1.c_str(),1);
+    // Only create button publishers if enabled
+    if (m_deviceConfig["button_states_enable"]) {
+        std::string buttonName1 = "xv_sdk/SN" + sn +"/button1";
+        rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher1;
+        m_buttonPublisher1.emplace(sn, buttonPublisher1);
+        m_buttonPublisher1[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName1.c_str(),1);
 
-    std::string buttonName2 = "xv_sdk/SN" + sn +"/button2";
-    rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher2;
-    m_buttonPublisher2.emplace(sn, buttonPublisher2);
-    m_buttonPublisher2[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName2.c_str(),1);
+        std::string buttonName2 = "xv_sdk/SN" + sn +"/button2";
+        rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher2;
+        m_buttonPublisher2.emplace(sn, buttonPublisher2);
+        m_buttonPublisher2[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName2.c_str(),1);
 
-    std::string buttonName3 = "xv_sdk/SN" + sn +"/button3";
-    rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher3;
-    m_buttonPublisher3.emplace(sn, buttonPublisher3);
-    m_buttonPublisher3[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName3.c_str(),1);
+        std::string buttonName3 = "xv_sdk/SN" + sn +"/button3";
+        rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher3;
+        m_buttonPublisher3.emplace(sn, buttonPublisher3);
+        m_buttonPublisher3[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName3.c_str(),1);
 
-    std::string buttonName4 = "xv_sdk/SN" + sn +"/button4";
-    rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher4;
-    m_buttonPublisher4.emplace(sn, buttonPublisher4);
-    m_buttonPublisher4[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName4.c_str(),1);
+        std::string buttonName4 = "xv_sdk/SN" + sn +"/button4";
+        rclcpp::Publisher<xv_ros2_msgs::msg::ButtonMsg>::SharedPtr buttonPublisher4;
+        m_buttonPublisher4.emplace(sn, buttonPublisher4);
+        m_buttonPublisher4[sn] = this->create_publisher<xv_ros2_msgs::msg::ButtonMsg>(buttonName4.c_str(),1);
+    }
 }
 
 void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
 {
+    std::cout << "Initializing controller topics for " << sn << std::endl;
+
+    // Create controller publishers
     std::string controllerLeftPose = "xv_sdk/SN" + sn +"/leftControllerPose";
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr leftControllerPosePub;
     m_controller_left_pose_publisher.emplace(sn, leftControllerPosePub);
     m_controller_left_pose_publisher[sn] = this->create_publisher<geometry_msgs::msg::PoseStamped>(controllerLeftPose.c_str(), 10);
+
     std::string controllerRightPose = "xv_sdk/SN" + sn +"/rightControllerPose";
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr rightControllerPosePub;
     m_controller_right_pose_publisher.emplace(sn, rightControllerPosePub);
@@ -381,6 +388,7 @@ void xvision_ros2_node::initControllerTopicAndServer(std::string sn)
     rclcpp::Publisher<xv_ros2_msgs::msg::Controller>::SharedPtr leftControllerDataPub;
     m_controller_left_data_publisher.emplace(sn, leftControllerDataPub);
     m_controller_left_data_publisher[sn] = this->create_publisher<xv_ros2_msgs::msg::Controller>(controllerLeftData.c_str(), 10);
+
     std::string controllerRightData = "xv_sdk/SN" + sn +"/rightControllerData";
     rclcpp::Publisher<xv_ros2_msgs::msg::Controller>::SharedPtr rightControllerDataPub;
     m_controller_right_data_publisher.emplace(sn, rightControllerDataPub);
@@ -498,6 +506,8 @@ void xvision_ros2_node::get_device_config_parameters(void)
     m_deviceConfig["slam_path_enable"] = false;
     m_deviceConfig["slam_pose_enable"] = true;
     m_deviceConfig["fisheye_enable"] = false;
+    m_deviceConfig["button_states_enable"] = true;  // Add default value for button states
+
     bool configState = false;
     for(auto &config_name : m_deviceConfig)
     {
@@ -760,31 +770,57 @@ void xvision_ros2_node::watchControllers(void)
             controller_map = getDevices(.0, "", nullptr, xv::SlamStartMode::Normal, xv::DeviceSupport::ONLY_WIRELESS_CONTROLLER);
         }
 
-        for(auto &pair : controller_map)
-        {
-            // m_controllerSerialNumber = pair.first;
-            if(m_controllerSerials.empty())
+        // Only proceed if controllers are found
+        if (!controller_map.empty()) {
+            for(auto &pair : controller_map)
             {
-                std::cout << "new controller device" << std::endl;
-                m_controllerSerials.push_back(m_controllerSerialNumber);
-                m_controllerMap.emplace(m_controllerSerialNumber, std::make_shared<xv_dev_wrapper>(this, controller_map[pair.first], m_controllerSerialNumber, 2));
-                initControllerTopicAndServer(m_controllerSerialNumber);
-            }
-            else
-            {
-                auto it = find(m_controllerSerials.begin(), m_controllerSerials.end(), m_controllerSerialNumber);
-                if(it == m_controllerSerials.end())
+                if(m_controllerSerials.empty())
                 {
                     std::cout << "new controller device" << std::endl;
                     m_controllerSerials.push_back(m_controllerSerialNumber);
-                    m_controllerMap.emplace(m_controllerSerialNumber, std::make_shared<xv_dev_wrapper>(this, controller_map[m_controllerSerialNumber], m_controllerSerialNumber, 2));
-                    initControllerTopicAndServer("Controller");
+                    m_controllerMap.emplace(m_controllerSerialNumber, std::make_shared<xv_dev_wrapper>(this, controller_map[pair.first], m_controllerSerialNumber, 2));
+                    // Start the controller before creating publishers
+                    if (m_controllerMap[m_controllerSerialNumber]->startController(this->getFrameID("controller_port"))) {
+                        initControllerTopicAndServer(m_controllerSerialNumber);
+                    }
+                }
+                else
+                {
+                    auto it = find(m_controllerSerials.begin(), m_controllerSerials.end(), m_controllerSerialNumber);
+                    if(it == m_controllerSerials.end())
+                    {
+                        std::cout << "new controller device" << std::endl;
+                        m_controllerSerials.push_back(m_controllerSerialNumber);
+                        m_controllerMap.emplace(m_controllerSerialNumber, std::make_shared<xv_dev_wrapper>(this, controller_map[m_controllerSerialNumber], m_controllerSerialNumber, 2));
+                        // Start the controller before creating publishers
+                        if (m_controllerMap[m_controllerSerialNumber]->startController(this->getFrameID("controller_port"))) {
+                            initControllerTopicAndServer(m_controllerSerialNumber);
+                        }
+                    }
                 }
             }
+        } else {
+            // If no controllers found, clean up existing controller resources
+            if (!m_controllerSerials.empty()) {
+                std::cout << "Controllers disconnected, cleaning up resources" << std::endl;
+                for (const auto& sn : m_controllerSerials) {
+                    if (m_controllerMap.count(sn) > 0) {
+                        m_controllerMap[sn]->stopController();
+                        m_controllerMap.erase(sn);
+                    }
+                }
+                m_controllerSerials.clear();
+
+                // Clear all controller publishers
+                m_controller_left_pose_publisher.clear();
+                m_controller_right_pose_publisher.clear();
+                m_controller_left_data_publisher.clear();
+                m_controller_right_data_publisher.clear();
+            }
         }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
-
 }
 
 void xvision_ros2_node::publishLeftControllerPose(std::string sn, const geometry_msgs::msg::PoseStamped& pose)
@@ -821,6 +857,11 @@ void xvision_ros2_node::publishRightControllerData(std::string sn, const xv_ros2
 
 void xvision_ros2_node::publishButton(std::string sn, int buttonType, const xv_ros2_msgs::msg::ButtonMsg& buttonMsg)
 {
+    // Only publish if button states are enabled
+    if (!m_deviceConfig["button_states_enable"]) {
+        return;
+    }
+
     switch(buttonType)
     {
         case 1:

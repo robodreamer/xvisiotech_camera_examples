@@ -519,12 +519,12 @@ void xv_dev_wrapper::registerFECallbackFunc(void)
 
             if (!xvGrayImage.data)
             {
-                this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: no FisheyeImages data");
+                this->m_node->printWarningMsg("XVSDK-ROS-WRAPPER Warning: no FisheyeImages data");
                 return;
             }
             if (xvFisheyeImages.hostTimestamp < 0)
             {
-                this->m_node->printErrorMsg("XVSDK-ROS-WRAPPER Warning: negative FisheyeImages host-timestamp");
+                this->m_node->printWarningMsg("XVSDK-ROS-WRAPPER Warning: negative FisheyeImages host-timestamp");
                 return;
             }
 

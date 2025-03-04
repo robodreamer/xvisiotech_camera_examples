@@ -7,8 +7,9 @@ def generate_launch_description():
     #imu_linear_acceleration = launch.substitutions.LaunchConfiguration('imu_linear_acceleration', default='0.0')
     #imu_angular_velocity = launch.substitutions.LaunchConfiguration('imu_angular_velocity', default='0.0')
     slam_path_enable = launch.substitutions.LaunchConfiguration('slam_path_enable', default='true')
-    slam_pose_enable = launch.substitutions.LaunchConfiguration('slam_pose_enable', default='true')                                                              
-    fisheye_enable = launch.substitutions.LaunchConfiguration('fisheye_enable', default='false')                                                              
+    slam_pose_enable = launch.substitutions.LaunchConfiguration('slam_pose_enable', default='true')
+    fisheye_enable = launch.substitutions.LaunchConfiguration('fisheye_enable', default='false')
+    button_states_enable = launch.substitutions.LaunchConfiguration('button_states_enable', default='true')
 
     return LaunchDescription([
         Node(
@@ -34,6 +35,7 @@ def generate_launch_description():
                 {"slam_path_enable": slam_path_enable},
                 {"slam_pose_enable": slam_pose_enable},
                 {"fisheye_enable": fisheye_enable},
+                {"button_states_enable": button_states_enable},
                 {"controller_port": "/dev/ttyUSB0"}
             ]
         )

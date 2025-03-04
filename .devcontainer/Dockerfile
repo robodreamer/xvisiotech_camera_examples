@@ -30,7 +30,8 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-dev x11-apps \
     ros-${ROS_DISTRO}-image-transport ros-${ROS_DISTRO}-rviz2 \
     libsuitesparse-dev \
-    dfu-util
+    dfu-util \
+    ros-${ROS_DISTRO}-plotjuggler-ros
 
 # (Optional) If you have other tools or dependencies, add them here.
 
