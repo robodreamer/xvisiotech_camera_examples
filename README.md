@@ -80,7 +80,7 @@ rviz2 -d ./xvisio-camera-test.rviz
 
 ### Optional Features
 
-The XvisioTech camera driver supports several optional features that can be enabled or disabled through launch parameters. By default, most features are disabled to reduce CPU usage and bandwidth. You can enable specific features based on your requirements.
+The XvisioTech camera driver supports several optional features that can be enabled or disabled through launch parameters. By default, most features are disabled to reduce CPU usage and bandwidth, except for SLAM pose and button states which are enabled by default. You can enable specific features based on your requirements.
 
 To enable a feature, add the corresponding parameter to the launch command:
 
@@ -94,13 +94,22 @@ Available parameters:
 - **rgb_enable**: Enable RGB camera images (default: false)
 - **tof_enable**: Enable Time-of-Flight depth camera (default: false)
 - **rgbd_enable**: Enable RGB-D combined data (default: false)
-- **button_states_enable**: Enable button state publishing (default: false)
+- **button_states_enable**: Enable button state publishing (default: true)
+- **event_enable**: Enable event data publishing (default: false)
+- **orientation_enable**: Enable orientation data publishing (default: false)
+- **slam_path_enable**: Enable SLAM trajectory publishing (default: false)
 - **slam_pose_enable**: Enable SLAM pose publishing (default: true)
 
-For example, to enable fisheye cameras and RGB images (for DS-80 cameras):
+For example, to enable fisheye cameras and RGB images:
 
 ```bash
 ros2 launch xv_sdk_ros2 xv_sdk_node_launch.py fisheye_enable:=true rgb_enable:=true
+```
+
+To disable button states (which are enabled by default):
+
+```bash
+ros2 launch xv_sdk_ros2 xv_sdk_node_launch.py button_states_enable:=false
 ```
 
 Enabling these features will make the corresponding topics available for subscription. Disabling them will prevent the topics from being created, reducing CPU usage and network bandwidth.

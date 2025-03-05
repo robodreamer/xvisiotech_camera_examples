@@ -7,7 +7,7 @@ def generate_launch_description():
     slam_path_enable = launch.substitutions.LaunchConfiguration('slam_path_enable', default='false')
     slam_pose_enable = launch.substitutions.LaunchConfiguration('slam_pose_enable', default='true')
     fisheye_enable = launch.substitutions.LaunchConfiguration('fisheye_enable', default='false')
-    button_states_enable = launch.substitutions.LaunchConfiguration('button_states_enable', default='false')
+    button_states_enable = launch.substitutions.LaunchConfiguration('button_states_enable', default='true')
     rgb_enable = launch.substitutions.LaunchConfiguration('rgb_enable', default='false')
     tof_enable = launch.substitutions.LaunchConfiguration('tof_enable', default='false')
     rgbd_enable = launch.substitutions.LaunchConfiguration('rgbd_enable', default='false')

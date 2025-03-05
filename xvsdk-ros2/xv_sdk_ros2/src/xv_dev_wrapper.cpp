@@ -59,7 +59,7 @@ void xv_dev_wrapper::init(void)
             initColorDepthCamera();
         }
 
-        if(m_device->eventStream() && m_node->getConfig("event_enable"))
+        if(m_device->eventStream() && (m_node->getConfig("event_enable") || m_node->getConfig("button_states_enable")))
         {
             initEvent();
         }

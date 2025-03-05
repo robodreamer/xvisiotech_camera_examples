@@ -19,12 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated README with optional feature documentation
 - Muted spamming messages for controller data
 - Updated permission for ttyUSB device for Seer controller
+- Changed button states to be enabled by default
+- Fixed event stream initialization to support button states
 
 ### Fixed
 - Fixed SGBM publisher methods to properly check for fisheye_enable parameter
 - Fixed UVC frame errors when fisheye cameras are disabled
 - Fixed firmware update dependency to run inside the container
 - Cleaned up driver logging messages
+- Fixed button states not being published when event_enable was false
 
 ## [1.1.0] - 2025-01-09
 
