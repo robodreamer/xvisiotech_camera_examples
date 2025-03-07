@@ -5,7 +5,8 @@ xvision_ros2_node::xvision_ros2_node(void) :
     count_(0),
     m_stopWatchDevices(false)
 {
-
+    // Create the remapped pose publisher
+    m_remapped_pose_publisher = this->create_publisher<geometry_msgs::msg::PoseStamped>("/xv_sdk/slam/pose", 10);
 }
 
 void xvision_ros2_node::init(void)
@@ -530,6 +531,12 @@ void xvision_ros2_node::publishSlamPose(std::string sn, const geometry_msgs::msg
     if(m_slam_pose_publisher[sn])
     {
         m_slam_pose_publisher[sn]->publish(pose);
+
+        // Also publish to the remapped topic
+        if(m_remapped_pose_publisher)
+        {
+            m_remapped_pose_publisher->publish(pose);
+        }
     }
 }
 
@@ -783,6 +790,12 @@ void xvision_ros2_node::publishLeftControllerPose(std::string sn, const geometry
     if(m_controller_left_pose_publisher[sn])
     {
         m_controller_left_pose_publisher[sn]->publish(pose);
+
+        // Also publish to the remapped topic if no SLAM pose is being published
+        if(m_remapped_pose_publisher && m_serialNumbers.empty())
+        {
+            m_remapped_pose_publisher->publish(pose);
+        }
     }
 }
 
@@ -791,6 +804,12 @@ void xvision_ros2_node::publishRightControllerPose(std::string sn, const geometr
     if(m_controller_right_pose_publisher[sn])
     {
         m_controller_right_pose_publisher[sn]->publish(pose);
+
+        // Also publish to the remapped topic if no SLAM pose is being published
+        if(m_remapped_pose_publisher && m_serialNumbers.empty())
+        {
+            m_remapped_pose_publisher->publish(pose);
+        }
     }
 }
 

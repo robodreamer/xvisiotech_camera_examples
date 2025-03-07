@@ -164,5 +164,8 @@ private:
     std::shared_ptr<xv::Device> controllerDevice;
     std::string controllerSN;
     std::set<std::string> m_published_frames;
+
+    // Remapped pose publisher
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr m_remapped_pose_publisher;
 };
 #endif
