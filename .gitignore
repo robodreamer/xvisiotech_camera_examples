@@ -1,0 +1,41 @@
+# Build artifacts
+build/
+*.so
+*.a
+*.o
+*.pyc
+__pycache__/
+*.pyi
+py.typed
+*.egg-info/
+dist/
+*.whl
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+build.ninja
+.ninja_deps
+.ninja_log
+.cmake/
+CMakeInit.txt
+
+# Python build
+.skbuild-info.json
+.pixi/
+
+# Device calibration files
+*.xvcd
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+

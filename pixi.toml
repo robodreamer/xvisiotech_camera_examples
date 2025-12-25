@@ -1,0 +1,49 @@
+[project]
+name = "xvisio"
+version = "0.1.0"
+description = "ROS-free Python SDK for Xvisio XR-50 devices"
+authors = ["Andy Park <andypark.purdue@gmail.com>"]
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64"]
+
+[activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:/usr/lib"
+PKG_CONFIG_PATH = "$CONDA_PREFIX/lib/pkgconfig"
+
+[dependencies]
+# Build tools
+cmake = ">=3.16,<4"
+ninja = ">=1.12,<2"
+# Python build dependencies
+python = ">=3.10,<3.13"
+nanobind = ">=2.8.0,<3"
+scikit-build-core = ">=0.11.5,<0.12"
+pip = ">=25.1,<26"
+
+[pypi-dependencies]
+numpy = ">=1.26.0"
+
+[tasks]
+# Development install with automatic rebuild on import
+install = "pip install -e . --no-build-isolation"
+install-rebuild = "pip install -C editable.rebuild=true -e . --no-build-isolation"
+build = "pip install --no-build-isolation ."
+# Run host setup script (requires sudo)
+host-setup = "sudo ./scripts/setup_host.sh"
+# Demo script
+demo_pose_imu = "python examples/demo_pose_imu.py"
+
+[feature.dev.dependencies]
+pytest = ">=7.0"
+black = ">=24.0"
+isort = ">=5.13.0"
+
+[feature.dev.tasks]
+test = "pytest test/"
+lint = "black --check python/ examples/ && isort --check python/ examples/"
+format = "black python/ examples/ && isort python/ examples/"
+
+[environments]
+default = { features = ["dev"] }
+

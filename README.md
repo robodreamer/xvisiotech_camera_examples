@@ -2,7 +2,68 @@
 
 This repository contains the driver and examples for using [XvisioTech](https://www.xvisiotech.com/) cameras, specifically the XR-50 and DS-80 models. It provides the necessary instructions to install the driver, set up the ROS2 package, and get started with the camera.
 
+## ROS-free Python SDK (Recommended for scripting)
+
+This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobind + pixi**. It lets you access **Pose (SLAM)** and **IMU** data directly from Python with minimal setup.
+
+### Quick start (Python)
+
+#### 1) One-time host setup (requires sudo)
+
+This installs the USB udev rule and the XVSDK driver `.deb` (system dependency):
+
+```bash
+sudo ./scripts/setup_host.sh
+```
+
+If the script adds you to the `plugdev` group, **log out and log back in** once.
+
+#### 2) Build/install the Python package (pixi)
+
+```bash
+pixi run install
+```
+
+#### 3) Run the demo
+
+```bash
+pixi run demo_pose_imu
+```
+
+### Minimal usage example
+
+```python
+import xvisio
+
+with xvisio.open() as dev:
+    dev.enable(slam=True, imu=True)
+
+    pose = dev.pose()
+    imu = dev.imu()
+
+    print(pose.position, pose.quat_wxyz, pose.confidence)
+    print(imu.accel, imu.gyro)
+```
+
+### Running tests
+
+- Unit tests (no hardware needed):
+
+```bash
+pixi run test
+```
+
+- Hardware smoke test (requires a connected device):
+
+```bash
+XVISIO_HARDWARE=1 pixi run test
+```
+
+For more details on the Python API, see `python/README.md`.
+
 ## Instructions (Docker Container) -- Recommended
+
+If your goal is **ROS-free Python scripting**, use the **ROS-free Python SDK** section above (pixi + `xvisio`). This Docker flow is mainly for the **ROS2 driver** workflow (RViz, ROS topics, launch files).
 
 ### Prerequisites
 

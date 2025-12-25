@@ -1,0 +1,63 @@
+[build-system]
+requires = ["scikit-build-core", "nanobind"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "xvisio"
+version = "0.1.0"
+description = "ROS-free Python SDK for Xvisio XR-50 devices"
+authors = [{ name = "Andy Park", email = "andypark.purdue@gmail.com" }]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26.0",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: C++",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = ["robotics", "slam", "imu", "tracking", "xvisio"]
+
+[project.urls]
+Homepage = "https://github.com/xvisiotech/xvisio-python"
+Repository = "https://github.com/xvisiotech/xvisio-python"
+"Bug Reports" = "https://github.com/xvisiotech/xvisio-python/issues"
+
+[tool.scikit-build]
+# Specify the CMake source directory
+cmake.source-dir = "."
+# Build directory
+build-dir = "build"
+# Install the Python package - CMake installs go here
+wheel.install-dir = "xvisio"
+# Include Python packages from source
+wheel.packages = ["python/xvisio"]
+# Explicitly use Ninja generator (required when ninja is available)
+ninja.make-fallback = false
+# Use inplace mode for editable installs (builds extension in source directory)
+editable.mode = "inplace"
+
+[tool.scikit-build.cmake.define]
+CMAKE_BUILD_TYPE = "Release"
+BUILD_PYTHON_BINDINGS = "ON"
+BUILD_TESTS = "OFF"
+BUILD_EXAMPLES = "OFF"
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
