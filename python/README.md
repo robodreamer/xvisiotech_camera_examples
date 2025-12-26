@@ -80,7 +80,19 @@ Enable device streams.
 
 ### `Device.pose(prediction_s=0.0) -> Pose`
 
-Get current pose with optional prediction time.
+Get current pose with optional prediction time (raw pose from SDK).
+
+### `Device.pose_world_aligned(prediction_s=0.0) -> Pose`
+
+Get current pose aligned with world frame. Applies rotation offset to align camera frame with world frame. This matches the transform used in the ROS2 teleop handler.
+
+### `Device.pose_relative(prediction_s=0.0) -> Pose`
+
+Get current pose relative to the reference pose. Returns delta pose from the last call to `reset_pose_reference()`. If `reset_pose_reference()` hasn't been called, automatically initializes on first call. Useful for teleoperation scenarios.
+
+### `Device.reset_pose_reference()`
+
+Reset the reference pose for relative pose calculations. Call this when you want to start tracking relative to the current pose.
 
 ### `Device.pose_at(host_timestamp_s) -> Pose`
 

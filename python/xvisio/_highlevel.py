@@ -2,6 +2,8 @@
 
 import time
 from typing import Optional, Iterator
+import numpy as np
+from spatialmath.base import q2r, r2q
 from .types import Pose, ImuSample, DeviceInfo
 
 def _load_native():
@@ -68,6 +70,15 @@ class Device:
         self._impl = impl
         self._slam_enabled = False
         self._imu_enabled = False
+
+        # Transform state for world-aligned and relative poses
+        # Rotation offset to align camera frame with world frame (from ROS2 handler)
+        # Standard offset: [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
+        # This maps: camera z+ (up) → world x+, camera x+ (forward) → world y+, camera y+ (right) → world z+
+        self._R_offset = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]], dtype=np.float64)
+        self._pos_init = None
+        self._quat_init = None
+        self._initialized = False
 
     def __enter__(self):
         """Context manager entry."""
@@ -149,6 +160,137 @@ class Device:
                     f"Failed to get pose after {max_retries} attempts. "
                     "SLAM may still be initializing - try moving the device or waiting longer."
                 )
+
+
+    def pose_world_aligned(self, prediction_s: float = 0.0) -> Pose:
+        """Get current pose aligned with world frame.
+
+        Applies rotation offset to align camera frame with world frame.
+        This matches the transform used in the ROS2 teleop handler.
+
+        Args:
+            prediction_s: Prediction time in seconds (default: 0.0).
+
+        Returns:
+            Pose object with world-aligned orientation.
+
+        Raises:
+            RuntimeError: If SLAM is not enabled or pose cannot be retrieved.
+        """
+        raw_pose = self.pose(prediction_s)
+
+        # Convert position and quaternion to numpy arrays
+        pos = np.array(raw_pose.position, dtype=np.float64)
+        quat_wxyz = np.array(raw_pose.quat_wxyz, dtype=np.float64)
+
+        # Convert quaternion [w, x, y, z] to [x, y, z, w] for spatialmath q2r(order="xyzs")
+        quat_xyzw = np.array([quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]], dtype=np.float64)
+
+        # Convert quaternion to rotation matrix using spatialmath (matching ROS2 handler)
+        R = q2r(quat_xyzw, order="xyzs")
+
+        # Apply rotation offset: R_world = R_offset @ R_camera @ R_offset.T
+        # Note: The ROS2 handler uses R_offset @ R_init.T @ R_camera @ R_offset.T for relative poses
+        # For absolute world-aligned poses, we apply: R_world = R_offset @ R_camera @ R_offset.T
+        R_world = self._R_offset @ R @ self._R_offset.T
+
+        # Rotate position: pos_world = R_offset @ pos_camera
+        pos_world = self._R_offset @ pos
+
+        # Convert back to quaternion using spatialmath
+        quat_xyzw_world = r2q(R_world, order="xyzs")  # Returns [x, y, z, w]
+        # Convert back to [w, x, y, z] format
+        quat_world = (quat_xyzw_world[3], quat_xyzw_world[0], quat_xyzw_world[1], quat_xyzw_world[2])
+
+        return Pose(
+            position=tuple(pos_world),
+            quat_wxyz=quat_world,
+            host_timestamp_s=raw_pose.host_timestamp_s,
+            edge_timestamp_us=raw_pose.edge_timestamp_us,
+            confidence=raw_pose.confidence,
+        )
+
+    def reset_pose_reference(self):
+        """Reset the reference pose for relative pose calculations.
+
+        Call this when you want to start tracking relative to the current pose.
+        Useful for teleoperation scenarios where you want delta poses.
+        """
+        try:
+            current_pose = self.pose()
+            self._pos_init = np.array(current_pose.position, dtype=np.float64)
+            self._quat_init = np.array(current_pose.quat_wxyz, dtype=np.float64)
+            self._initialized = True
+        except RuntimeError:
+            # If pose not available yet, mark as not initialized
+            self._initialized = False
+
+    def pose_relative(self, prediction_s: float = 0.0) -> Pose:
+        """Get current pose relative to the reference pose.
+
+        Returns pose relative to the last call to reset_pose_reference().
+        If reset_pose_reference() hasn't been called, automatically initializes
+        on first call.
+
+        This matches the transform used in the ROS2 teleop handler for delta poses.
+
+        Args:
+            prediction_s: Prediction time in seconds (default: 0.0).
+
+        Returns:
+            Pose object relative to reference pose.
+
+        Raises:
+            RuntimeError: If SLAM is not enabled or pose cannot be retrieved.
+        """
+        raw_pose = self.pose(prediction_s)
+
+        # Auto-initialize on first call if not already initialized
+        if not self._initialized:
+            self.reset_pose_reference()
+
+        if not self._initialized:
+            # If still not initialized, return zero pose
+            return Pose(
+                position=(0.0, 0.0, 0.0),
+                quat_wxyz=(1.0, 0.0, 0.0, 0.0),
+                host_timestamp_s=raw_pose.host_timestamp_s,
+                edge_timestamp_us=raw_pose.edge_timestamp_us,
+                confidence=raw_pose.confidence,
+            )
+
+        # Convert to numpy arrays
+        pos = np.array(raw_pose.position, dtype=np.float64)
+        quat_wxyz = np.array(raw_pose.quat_wxyz, dtype=np.float64)
+        pos_init = self._pos_init
+        quat_init_wxyz = self._quat_init
+
+        # Convert quaternions [w, x, y, z] to [x, y, z, w] for spatialmath q2r(order="xyzs")
+        quat_xyzw = np.array([quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]], dtype=np.float64)
+        quat_init_xyzw = np.array([quat_init_wxyz[1], quat_init_wxyz[2], quat_init_wxyz[3], quat_init_wxyz[0]], dtype=np.float64)
+
+        # Convert quaternions to rotation matrices using spatialmath (matching ROS2 handler)
+        R = q2r(quat_xyzw, order="xyzs")
+        R_init = q2r(quat_init_xyzw, order="xyzs")
+
+        # Apply transform matching ROS2 handler exactly:
+        # pos_rel = R_offset @ R_init.T @ (pos - pos_init)
+        # R_rel = R_offset @ R_init.T @ R @ R_offset.T
+        pos_rel = self._R_offset @ R_init.T @ (pos - pos_init)
+        R_rel = self._R_offset @ R_init.T @ R @ self._R_offset.T
+
+        # Convert back to quaternion using spatialmath
+        quat_rel_xyzw = r2q(R_rel, order="xyzs")  # Returns [x, y, z, w]
+        # Convert back to [w, x, y, z] format
+        quat_rel = (quat_rel_xyzw[3], quat_rel_xyzw[0], quat_rel_xyzw[1], quat_rel_xyzw[2])
+
+        return Pose(
+            position=tuple(pos_rel),
+            quat_wxyz=quat_rel,
+            host_timestamp_s=raw_pose.host_timestamp_s,
+            edge_timestamp_us=raw_pose.edge_timestamp_us,
+            confidence=raw_pose.confidence,
+        )
 
     def pose_at(self, host_timestamp_s: float) -> Pose:
         """Get pose at a specific timestamp.

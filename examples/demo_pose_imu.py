@@ -5,7 +5,10 @@ Simple demo showing pose + IMU usage with xvisio.
 This script demonstrates the minimal-lines API:
 - Open device
 - Enable SLAM and IMU
-- Print pose and IMU data for 10 seconds
+- Print world-aligned pose and IMU data for 10 seconds
+
+Note: Uses pose_world_aligned() by default, which applies rotation offset
+to align camera frame with world frame (matching ROS2 teleop handler).
 """
 
 import xvisio
@@ -45,6 +48,7 @@ def main():
             print("✓ Ready\n")
 
             print("Collecting data for 10 seconds (Ctrl+C to stop early)...\n")
+            print("Using world-aligned poses (rotation offset applied for world frame alignment)")
             print(f"{'Time':<8} {'Position (x,y,z)':<30} {'Quat (w,x,y,z)':<35} {'Confidence':<10}")
             print("-" * 100)
 
@@ -53,8 +57,8 @@ def main():
 
             try:
                 while time.time() - start_time < 10.0:
-                    # Get pose
-                    pose = dev.pose()
+                    # Get world-aligned pose (applies rotation offset to align camera frame with world frame)
+                    pose = dev.pose_world_aligned()
                     pos_str = f"({pose.position[0]:.3f},{pose.position[1]:.3f},{pose.position[2]:.3f})"
                     quat_str = f"({pose.quat_wxyz[0]:.3f},{pose.quat_wxyz[1]:.3f},{pose.quat_wxyz[2]:.3f},{pose.quat_wxyz[3]:.3f})"
 
