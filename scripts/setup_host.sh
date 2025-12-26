@@ -6,9 +6,17 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-UDEV_RULES_SRC="${REPO_ROOT}/ubuntu-drivers/99-xvisio.rules"
+
+# Allow override via environment variable (for pip-installed packages)
+if [ -n "${XVISIO_DRIVERS_DIR}" ]; then
+    DRIVERS_DIR="${XVISIO_DRIVERS_DIR}"
+else
+    DRIVERS_DIR="${REPO_ROOT}/ubuntu-drivers"
+fi
+
+UDEV_RULES_SRC="${DRIVERS_DIR}/99-xvisio.rules"
 UDEV_RULES_DEST="/etc/udev/rules.d/99-xvisio.rules"
-DEB_FILE="${REPO_ROOT}/ubuntu-drivers/XVSDK_jammy_amd64_20250227.deb"
+DEB_FILE="${DRIVERS_DIR}/XVSDK_jammy_amd64_20250227.deb"
 
 echo "=== Xvisio Host Setup ==="
 echo ""

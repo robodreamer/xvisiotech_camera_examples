@@ -4,31 +4,63 @@ This repository contains the driver and examples for using [XvisioTech](https://
 
 ## ROS-free Python SDK (Recommended for scripting)
 
-This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobind + pixi**. It lets you access **Pose (SLAM)** and **IMU** data directly from Python with minimal setup.
+This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobind**. It lets you access **Pose (SLAM)** and **IMU** data directly from Python with minimal setup.
 
-### Quick start (Python)
+### Quick start (pip installation)
 
-#### 1) One-time host setup (requires sudo)
-
-This installs the USB udev rule and the XVSDK driver `.deb` (system dependency):
+#### 1) Install the Python package
 
 ```bash
-sudo ./scripts/setup_host.sh
+pip install xvisio
+```
+
+#### 2) Run system setup (one-time, requires sudo)
+
+This installs the USB udev rule and the XVSDK driver `.deb`:
+
+```bash
+sudo xvisio-setup
 ```
 
 If the script adds you to the `plugdev` group, **log out and log back in** once.
 
-#### 2) Build/install the Python package (pixi)
-
-```bash
-pixi run install
-```
-
 #### 3) Run the demo
 
+```python
+python -c "import xvisio; from examples.demo_pose_imu import main; main()"
+```
+
+Or use the Python API directly:
+
+```python
+import xvisio
+
+with xvisio.open() as dev:
+    dev.enable(slam=True, imu=True)
+    pose = dev.pose_world_aligned()
+    imu = dev.imu()
+    print(pose.position, imu.accel)
+```
+
+### Development installation (pixi)
+
+For development, use pixi:
+
 ```bash
+# Install pixi
+curl -fsSL https://pixi.sh/install.sh | bash
+
+# Run host setup (one-time, requires sudo)
+sudo ./scripts/setup_host.sh
+
+# Install Python package
+pixi run install
+
+# Run demo
 pixi run demo_pose_imu
 ```
+
+See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
 ### Minimal usage example
 
