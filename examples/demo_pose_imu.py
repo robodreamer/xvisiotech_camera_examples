@@ -40,7 +40,8 @@ def main():
 
             # Give streams a moment to start (especially IMU callback and SLAM initialization)
             print("Waiting for streams to initialize...")
-            time.sleep(0.5)  # Give SLAM more time to initialize with fisheye cameras
+            print("  (SLAM needs time to process initial frames - this may take a few seconds)")
+            time.sleep(2.0)  # Give SLAM more time to initialize with fisheye cameras
             print("✓ Ready\n")
 
             print("Collecting data for 10 seconds (Ctrl+C to stop early)...\n")

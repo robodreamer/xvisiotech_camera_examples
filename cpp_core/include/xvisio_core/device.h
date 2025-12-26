@@ -59,6 +59,8 @@ public:
 
 private:
     void imu_callback(const xv::Imu& xv_imu);
+    void fisheye_callback(const xv::FisheyeImages& images);
+    void slam_callback(const xv::Pose& pose);
 
     std::shared_ptr<xv::Device> m_device;
     std::string m_serial_number;
@@ -69,6 +71,11 @@ private:
     std::mutex m_imu_mutex;
     ImuSample m_latest_imu;
     bool m_imu_available;
+
+    // Fisheye callback ID (for cleanup)
+    int m_fisheye_callback_id;
+    // SLAM callback ID (for cleanup)
+    int m_slam_callback_id;
 };
 
 // Device discovery

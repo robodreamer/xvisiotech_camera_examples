@@ -125,17 +125,30 @@ class Device:
         """
         if not self._slam_enabled:
             raise RuntimeError("SLAM is not enabled. Call enable(slam=True) first.")
-        try:
-            p = self._impl.get_pose(prediction_s)
-            return Pose(
-                position=tuple(p.position),
-                quat_wxyz=tuple(p.quaternion),
-                host_timestamp_s=p.host_timestamp_s,
-                edge_timestamp_us=p.edge_timestamp_us,
-                confidence=p.confidence,
-            )
-        except Exception as e:
-            raise RuntimeError(f"Failed to get pose: {e}") from e
+
+        import time
+        # SLAM may need time to initialize - retry a few times
+        max_retries = 10
+        retry_delay = 0.1
+
+        for attempt in range(max_retries):
+            try:
+                p = self._impl.get_pose(prediction_s)
+                return Pose(
+                    position=tuple(p.position),
+                    quat_wxyz=tuple(p.quaternion),
+                    host_timestamp_s=p.host_timestamp_s,
+                    edge_timestamp_us=p.edge_timestamp_us,
+                    confidence=p.confidence,
+                )
+            except Exception:
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
+                raise RuntimeError(
+                    f"Failed to get pose after {max_retries} attempts. "
+                    "SLAM may still be initializing - try moving the device or waiting longer."
+                )
 
     def pose_at(self, host_timestamp_s: float) -> Pose:
         """Get pose at a specific timestamp.

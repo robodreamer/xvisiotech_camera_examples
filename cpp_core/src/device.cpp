@@ -14,6 +14,8 @@ Device::Device(std::shared_ptr<xv::Device> device, const std::string& serial_num
     , m_slam_running(false)
     , m_imu_running(false)
     , m_imu_available(false)
+    , m_fisheye_callback_id(-1)
+    , m_slam_callback_id(-1)
 {
     // Initialize latest IMU sample
     m_latest_imu.accel[0] = 0.0f;
@@ -40,13 +42,63 @@ bool Device::start_slam() {
         return false;
     }
 
-    // SLAM requires fisheye cameras to be running for visual tracking
-    // Start fisheye cameras if available (similar to ROS2 driver)
-    if (m_device->fisheyeCameras()) {
-        m_device->fisheyeCameras()->start();
+    // Start IMU first if available (SLAM benefits from IMU data during initialization)
+    // This matches ROS2 driver initialization order: initImu() -> initFisheyeCameras() -> initSlam()
+    if (m_device->imuSensor() && !m_imu_running) {
+        start_imu();
     }
 
+    // SLAM requires fisheye cameras to be running for visual tracking
+    // Start fisheye cameras if available (similar to ROS2 driver)
+    // CRITICAL: Must register a callback to consume fisheye frames, otherwise SLAM won't work
+    if (m_device->fisheyeCameras()) {
+        // Register callback to consume fisheye frames (required for SLAM to process visual data)
+        auto fe_callback = [this](const xv::FisheyeImages& images) {
+            this->fisheye_callback(images);
+        };
+        m_fisheye_callback_id = m_device->fisheyeCameras()->registerCallback(fe_callback);
+        if (m_fisheye_callback_id < 0) {
+            return false;  // Callback registration failed
+        }
+        if (!m_device->fisheyeCameras()->start()) {
+            m_device->fisheyeCameras()->unregisterCallback(m_fisheye_callback_id);
+            m_fisheye_callback_id = -1;
+            return false;  // Failed to start fisheye cameras
+        }
+    }
+
+    // Register SLAM callback BEFORE starting (required for SLAM to process poses)
+    // Even though we poll with getPose(), registering a callback ensures SLAM is active
+    auto slam_cb = [this](const xv::Pose& pose) {
+        this->slam_callback(pose);
+    };
+    m_slam_callback_id = m_device->slam()->registerCallback(slam_cb);
+    if (m_slam_callback_id < 0) {
+        // Clean up fisheye on failure
+        if (m_device->fisheyeCameras() && m_fisheye_callback_id >= 0) {
+            m_device->fisheyeCameras()->stop();
+            m_device->fisheyeCameras()->unregisterCallback(m_fisheye_callback_id);
+            m_fisheye_callback_id = -1;
+        }
+        return false;  // Callback registration failed
+    }
+
+    // Start SLAM - this may take a moment to initialize
     m_slam_running = m_device->slam()->start();
+
+    if (!m_slam_running) {
+        // Clean up on failure
+        if (m_slam_callback_id >= 0) {
+            m_device->slam()->unregisterCallback(m_slam_callback_id);
+            m_slam_callback_id = -1;
+        }
+        if (m_device->fisheyeCameras() && m_fisheye_callback_id >= 0) {
+            m_device->fisheyeCameras()->stop();
+            m_device->fisheyeCameras()->unregisterCallback(m_fisheye_callback_id);
+            m_fisheye_callback_id = -1;
+        }
+    }
+
     return m_slam_running;
 }
 
@@ -58,22 +110,39 @@ bool Device::stop_slam() {
         m_device->slam()->stop();
         m_slam_running = false;
 
+        // Unregister SLAM callback
+        if (m_slam_callback_id >= 0) {
+            m_device->slam()->unregisterCallback(m_slam_callback_id);
+            m_slam_callback_id = -1;
+        }
+
         // Stop fisheye cameras when stopping SLAM
         if (m_device->fisheyeCameras()) {
             m_device->fisheyeCameras()->stop();
+            // Unregister callback
+            if (m_fisheye_callback_id >= 0) {
+                m_device->fisheyeCameras()->unregisterCallback(m_fisheye_callback_id);
+                m_fisheye_callback_id = -1;
+            }
         }
     }
     return true;
 }
 
 bool Device::get_pose(Pose& pose, double prediction_s) {
-    if (!m_device || !m_device->slam() || !m_slam_running) {
+    if (!m_device || !m_device->slam()) {
+        return false;
+    }
+
+    if (!m_slam_running) {
         return false;
     }
 
     xv::Pose xv_pose;
     bool ok = m_device->slam()->getPose(xv_pose, prediction_s);
     if (!ok) {
+        // SLAM might not have initialized yet - this is normal during startup
+        // The callback will be called once SLAM starts tracking
         return false;
     }
 
@@ -184,6 +253,21 @@ bool Device::get_imu(ImuSample& imu) {
 
     imu = m_latest_imu;
     return true;
+}
+
+void Device::fisheye_callback(const xv::FisheyeImages& images) {
+    // Minimal callback - just consume the frames to keep the stream active
+    // SLAM needs fisheye frames to be consumed for visual tracking to work
+    // We don't need to do anything with the data, just registering the callback
+    // ensures the SDK processes the frames and feeds them to SLAM
+    (void)images;  // Suppress unused parameter warning
+}
+
+void Device::slam_callback(const xv::Pose& pose) {
+    // Minimal callback - SLAM needs a callback registered to be active
+    // Even though we poll with getPose(), registering a callback ensures
+    // SLAM processes poses internally
+    (void)pose;  // Suppress unused parameter warning
 }
 
 std::vector<DeviceInfo> discover_devices() {
