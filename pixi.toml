@@ -24,6 +24,7 @@ pip = ">=25.1,<26"
 [pypi-dependencies]
 numpy = ">=1.26.0"
 spatialmath-python = ">=1.1.0"
+viser = ">=0.1.0"
 
 [tasks]
 # Development install with automatic rebuild on import
@@ -32,8 +33,9 @@ install-rebuild = "pip install -C editable.rebuild=true -e . --no-build-isolatio
 build = "pip install --no-build-isolation ."
 # Run host setup script (requires sudo)
 host-setup = "sudo ./scripts/setup_host.sh"
-# Demo script
+# Demo scripts
 demo_pose_imu = "python examples/demo_pose_imu.py"
+demo_pose_visualization = "python examples/demo_pose_visualization.py"
 
 [feature.dev.dependencies]
 pytest = ">=7.0"
