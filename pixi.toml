@@ -36,6 +36,7 @@ host-setup = "sudo ./scripts/setup_host.sh"
 # Demo scripts
 demo_pose_imu = "python examples/demo_pose_imu.py"
 demo_pose_visualization = "python examples/demo_pose_visualization.py"
+benchmark_pose_rate = "python examples/benchmark_pose_rate.py"
 
 [feature.dev.dependencies]
 pytest = ">=7.0"
