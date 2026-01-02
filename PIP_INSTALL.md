@@ -1,29 +1,63 @@
-# Pip Installation Guide
+# Installation Guide (pip install)
 
-The `xvisio` package can now be installed via `pip install`, making it easy to integrate into other projects.
+The `xvisio` package can be installed via `pip` from TestPyPI (for testing) <!-- TODO: or PyPI (for production) --> or from source checkout (for development).
 
-## Installation Steps
+## Quick Installation (pip install)
 
-### 1. Install Python Package
+<!-- TODO: When publishing to PyPI, replace TestPyPI section with PyPI section below -->
+
+**For testing the latest development version (TestPyPI):**
 
 ```bash
-pip install xvisio
+# Install from TestPyPI (see https://test.pypi.org/project/xvisio/)
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ xvisio==0.1.1
+
+# Run system setup (one-time, requires sudo)
+sudo xvisio-setup
+
+# Test installation
+python3 -c "import xvisio; print(xvisio.discover())"
 ```
 
-This installs:
-- The Python package (`xvisio`)
-- Python dependencies (numpy, spatialmath-python)
-- CLI command (`xvisio-setup`)
+**Note:** The `--extra-index-url` flag ensures that dependencies (like `numpy`, `spatialmath-python`) are installed from the main PyPI, while `xvisio` comes from TestPyPI. View available versions at [test.pypi.org/project/xvisio/](https://test.pypi.org/project/xvisio/).
+
+<!-- TODO: Uncomment when publishing to PyPI
+**For production use (PyPI):**
+
+```bash
+# Install from PyPI
+pip install xvisio
+
+# Run system setup (one-time, requires sudo)
+sudo xvisio-setup
+
+# Test installation
+python3 -c "import xvisio; print(xvisio.discover())"
+```
+
+View the package at [pypi.org/project/xvisio/](https://pypi.org/project/xvisio/).
+-->
+
+## Installation from Source Checkout
+
+For development or if you need the latest unreleased code:
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+cd xvisiotech_camera_examples
+```
 
 ### 2. Run System Setup (One-time, requires sudo)
 
-After installing the Python package, you need to set up system-level dependencies:
+Set up system-level dependencies (udev rules, XVSDK driver):
 
 ```bash
-sudo xvisio-setup
+sudo ./scripts/setup_host.sh
 ```
 
-This command:
+This script:
 - Installs udev rules for USB device access
 - Adds your user to the `plugdev` group (you may need to log out/in)
 - Installs SuiteSparse libraries
@@ -31,7 +65,13 @@ This command:
 
 **Note**: If you were added to the `plugdev` group, log out and log back in for the change to take effect.
 
-### 3. Verify Installation
+### 3. Install the Python Package
+
+```bash
+pip install -e . --no-build-isolation
+```
+
+### 4. Verify Installation
 
 ```python
 import xvisio
@@ -51,7 +91,32 @@ with xvisio.open() as dev:
 
 ### Adding as a Dependency
 
-Add `xvisio` to your project's `requirements.txt` or `pyproject.toml`:
+<!-- TODO: When publishing to PyPI, move PyPI section above TestPyPI section -->
+
+**From TestPyPI (current - for testing):**
+
+**requirements.txt:**
+```
+--extra-index-url https://pypi.org/simple/
+--index-url https://test.pypi.org/simple/
+xvisio==0.1.1
+```
+
+**pyproject.toml:**
+```toml
+[[tool.pip.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+extra = true
+
+[project]
+dependencies = [
+    "xvisio==0.1.1",
+]
+```
+
+<!-- TODO: Uncomment when publishing to PyPI
+**From PyPI (production):**
 
 **requirements.txt:**
 ```
@@ -65,6 +130,7 @@ dependencies = [
     "xvisio>=0.1.0",
 ]
 ```
+-->
 
 ### Example: Using in Another Project
 
@@ -91,26 +157,35 @@ if __name__ == "__main__":
 
 ## What Gets Installed
 
-When you run `pip install xvisio`:
+When you run `pip install xvisio` (from TestPyPI or source):
 
 1. **Python Package**: `xvisio` module with all Python code
 2. **CLI Command**: `xvisio-setup` for system setup
-3. **Build Artifacts**: C++ extension module (built during installation)
+3. **Build Artifacts**: C++ extension module (built during installation from source distribution)
 
 The package includes:
 - Python API (`xvisio.open()`, `xvisio.discover()`, etc.)
 - C++ bindings (built with nanobind)
 - System setup script (accessible via `xvisio-setup`)
+- Driver assets (udev rules, `.deb` file) for `xvisio-setup` command
 
-## Limitations
+## System Setup Required
 
-**System-level setup still required**: The `pip install` command installs the Python package, but system-level setup (udev rules, driver installation) must be done separately via `sudo xvisio-setup`. This is because:
+**Important**: After installing via `pip`, you must run system setup:
 
-- Pip cannot install system packages (apt-get)
-- Pip cannot install `.deb` files
-- Pip cannot modify udev rules or user groups
+```bash
+sudo xvisio-setup
+```
 
-However, the `xvisio-setup` command makes this process simple and automated.
+This command:
+- Installs udev rules for USB device access
+- Installs the XVSDK driver `.deb` package
+- Installs SuiteSparse libraries (if needed)
+- Adds your user to the `plugdev` group (you may need to log out/in)
+
+**Why separate?** Pip cannot install system packages, `.deb` files, or modify udev rules. The `xvisio-setup` command handles all system-level setup automatically.
+
+**Note**: The `xvisio-setup` command locates driver assets from the installed package. Driver files (`scripts/setup_host.sh`, `ubuntu-drivers/`) are included in the source distribution. If `xvisio-setup` cannot find them, ensure you installed from a source distribution (not a wheel), or manually run `sudo ./scripts/setup_host.sh` from a source checkout.
 
 ## Troubleshooting
 
@@ -135,10 +210,17 @@ If the build fails:
 - Ensure you have XVSDK installed: `ls /usr/lib/libxvsdk.so`
 - Try installing build dependencies first: `pip install scikit-build-core nanobind`
 
-## Development vs Production
+## Installation Methods Summary
 
-- **Production**: Use `pip install xvisio` + `sudo xvisio-setup`
-- **Development**: Use pixi (see main README.md)
+<!-- TODO: When publishing to PyPI, update this table to show PyPI as primary method -->
 
-The pip installation is optimized for end users who want to use the package in their projects, while pixi is better for development and contributing to the package itself.
+| Method | Use Case | Command |
+|--------|----------|---------|
+| **TestPyPI** | Testing latest development version | `pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ xvisio==0.1.1` |
+| **Source Checkout** | Development, contributing, or latest unreleased code | `pip install -e . --no-build-isolation` |
+| <!-- TODO: Uncomment when PyPI is published --><!-- **PyPI** | Production use | `pip install xvisio` --> |
+
+**All methods require**: `sudo xvisio-setup` after installation for system-level setup.
+
+For development with pixi, see the main [README.md](README.md).
 

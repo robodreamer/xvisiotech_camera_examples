@@ -1,17 +1,54 @@
 # Installation Guide
 
-## Quick Installation (pip)
+## Quick Installation (pip install)
 
-The `xvisio` package can be installed via pip:
+<!-- TODO: When publishing to PyPI, replace TestPyPI section with PyPI section below -->
+
+**For testing the latest development version (TestPyPI):**
 
 ```bash
-pip install xvisio
+# Install from TestPyPI (see https://test.pypi.org/project/xvisio/)
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ xvisio==0.1.1
+
+# Run system setup (one-time, requires sudo)
+sudo xvisio-setup
+
+# Test installation
+python3 -c "import xvisio; print(xvisio.discover())"
 ```
 
-However, **system-level setup is still required** for device access. After installing the Python package, run:
+**Note:** The `--extra-index-url` flag ensures that dependencies (like `numpy`, `spatialmath-python`) are installed from the main PyPI, while `xvisio` comes from TestPyPI. View available versions at [test.pypi.org/project/xvisio/](https://test.pypi.org/project/xvisio/).
+
+<!-- TODO: Uncomment when publishing to PyPI
+**For production use (PyPI):**
 
 ```bash
+# Install from PyPI
+pip install xvisio
+
+# Run system setup (one-time, requires sudo)
 sudo xvisio-setup
+
+# Test installation
+python3 -c "import xvisio; print(xvisio.discover())"
+```
+
+View the package at [pypi.org/project/xvisio/](https://pypi.org/project/xvisio/).
+-->
+
+## Quick Installation (source checkout)
+
+The `xvisio` package requires a source checkout for system setup:
+
+```bash
+git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+cd xvisiotech_camera_examples
+```
+
+Then run the system setup script (one-time, requires sudo):
+
+```bash
+sudo ./scripts/setup_host.sh
 ```
 
 This will:
@@ -19,6 +56,12 @@ This will:
 - Add your user to the `plugdev` group (you may need to log out/in)
 - Install SuiteSparse libraries (required for stub generation)
 - Install the XVSDK driver `.deb` package
+
+Finally, install the Python package:
+
+```bash
+pip install -e . --no-build-isolation
+```
 
 ## Development Installation (pixi)
 

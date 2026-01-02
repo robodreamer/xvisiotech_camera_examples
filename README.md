@@ -6,12 +6,49 @@ This repository contains the driver and examples for using [XvisioTech](https://
 
 This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobind**. It lets you access **Pose (SLAM)** and **IMU** data directly from Python with minimal setup.
 
-### Quick start (pip installation)
+### Quick start (pip install)
 
-#### 1) Install the Python package
+<!-- TODO: When publishing to PyPI, replace TestPyPI section with PyPI section below -->
+
+**For testing the latest development version (TestPyPI):**
 
 ```bash
+# Install from TestPyPI (see https://test.pypi.org/project/xvisio/)
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ xvisio==0.1.1
+
+# Run system setup (one-time, requires sudo)
+sudo xvisio-setup
+
+# Test installation
+python3 -c "import xvisio; print(xvisio.discover())"
+```
+
+**Note:** The `--extra-index-url` flag ensures that dependencies (like `numpy`, `spatialmath-python`) are installed from the main PyPI, while `xvisio` comes from TestPyPI. View the package at [test.pypi.org/project/xvisio/](https://test.pypi.org/project/xvisio/).
+
+<!-- TODO: Uncomment when publishing to PyPI
+**For production use (PyPI):**
+
+```bash
+# Install from PyPI
 pip install xvisio
+
+# Run system setup (one-time, requires sudo)
+sudo xvisio-setup
+
+# Test installation
+python3 -c "import xvisio; print(xvisio.discover())"
+```
+
+View the package at [pypi.org/project/xvisio/](https://pypi.org/project/xvisio/).
+-->
+
+### Quick start (source checkout)
+
+#### 1) Clone the repository
+
+```bash
+git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+cd xvisiotech_camera_examples
 ```
 
 #### 2) Run system setup (one-time, requires sudo)
@@ -19,15 +56,28 @@ pip install xvisio
 This installs the USB udev rule and the XVSDK driver `.deb`:
 
 ```bash
-sudo xvisio-setup
+sudo ./scripts/setup_host.sh
 ```
 
 If the script adds you to the `plugdev` group, **log out and log back in** once.
 
-#### 3) Run the demo
+#### 3) Install the Python package
 
-```python
-python -c "import xvisio; from examples.demo_pose_imu import main; main()"
+```bash
+pip install -e . --no-build-isolation
+```
+
+#### 4) Run the demo
+
+```bash
+python examples/demo_pose_imu.py
+```
+
+Or visualize the pose in 3D:
+
+```bash
+python examples/demo_pose_visualization.py
+# Then open http://localhost:8080 in your browser
 ```
 
 Or use the Python API directly:
@@ -62,6 +112,8 @@ pixi run demo_pose_imu
 
 See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
+<!-- TODO: Remove this section when PyPI is published (PyPI instructions moved to top) -->
+
 ### Minimal usage example
 
 ```python
@@ -92,6 +144,78 @@ XVISIO_HARDWARE=1 pixi run test
 ```
 
 For more details on the Python API, see `python/README.md`.
+
+### Version Management and Publishing
+
+The project includes tools for managing versions and publishing wheels to PyPI.
+
+#### Version Management
+
+Check current version:
+```bash
+pixi run version
+```
+
+Set a specific version:
+```bash
+pixi run version 0.2.0
+```
+
+Bump version automatically:
+```bash
+# Bump patch version (0.1.0 -> 0.1.1)
+pixi run version --bump patch
+
+# Bump minor version (0.1.0 -> 0.2.0)
+pixi run version --bump minor
+
+# Bump major version (0.1.0 -> 1.0.0)
+pixi run version --bump major
+```
+
+#### Building Distributions
+
+Build wheel and source distribution:
+```bash
+pixi run build-dist
+```
+
+Build wheel only:
+```bash
+pixi run build-wheel
+```
+
+Build source distribution only:
+```bash
+pixi run build-sdist
+```
+
+#### Publishing to PyPI
+
+**1. Test on TestPyPI first (recommended):**
+```bash
+# Build distributions
+pixi run build-dist
+
+# Upload to TestPyPI
+pixi run upload-testpypi
+
+# Test installation
+pip install --index-url https://test.pypi.org/simple/ xvisio
+```
+
+**2. Publish to PyPI:**
+```bash
+# Build distributions
+pixi run build-dist
+
+# Upload to PyPI
+pixi run upload-pypi
+```
+
+**Note:** You'll need to configure PyPI credentials in `~/.pypirc` before uploading. See [PUBLISHING.md](PUBLISHING.md) for detailed instructions.
+
+For complete publishing workflow and troubleshooting, see [PUBLISHING.md](PUBLISHING.md).
 
 ## Instructions (Docker Container) -- Recommended
 
