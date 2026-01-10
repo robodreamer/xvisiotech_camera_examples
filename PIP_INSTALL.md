@@ -87,6 +87,53 @@ with xvisio.open() as dev:
     print(f"Position: {pose.position}")
 ```
 
+## Running Examples
+
+Examples are included in the pip package. To access them:
+
+### Option 1: Use the `xvisio-examples` command (recommended)
+
+**List available examples:**
+```bash
+xvisio-examples --list
+```
+
+**Copy examples to a local directory for editing:**
+```bash
+xvisio-examples --copy
+
+# Then run examples from the copied directory
+cd xvisio_examples
+python demo_pose_imu.py
+```
+
+**Show examples location:**
+```bash
+xvisio-examples
+# Then run directly: python /path/to/examples/demo_pose_imu.py
+```
+
+### Option 2: Clone the Repository
+
+If examples aren't found in the package, you can clone the repository:
+
+```bash
+# Clone just to get examples (you already have xvisio installed)
+git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+cd xvisiotech_camera_examples
+python examples/demo_pose_imu.py
+```
+
+### Available Examples
+
+- **`demo_pose_imu.py`** - Basic pose + IMU demo (no extra dependencies)
+- **`demo_pose_visualization.py`** - 3D visualization (requires `viser`: `pip install viser`)
+- **`demo_pose_transforms.py`** - Demonstrates different pose transform methods
+- **`benchmark_pose_rate.py`** - Benchmark pose update rates
+
+**Note**: Examples are standalone scripts that only require the `xvisio` package (already installed via pip). Some examples may require additional dependencies:
+- `demo_pose_visualization.py` requires `viser` (install with `pip install viser`)
+
 ## Integration into Other Projects
 
 ### Adding as a Dependency

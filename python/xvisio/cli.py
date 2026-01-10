@@ -7,7 +7,9 @@ run with sudo.
 
 from __future__ import annotations
 
+import argparse
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -109,6 +111,144 @@ def setup_host() -> None:
     print("1. If you were added to the plugdev group, log out and log back in")
     print("2. Connect your XR-50 device via USB")
     print("3. Test: python3 -c 'import xvisio; print(xvisio.discover())'")
+
+
+def _find_examples_dir() -> Path | None:
+    """Find the examples directory in the installed package."""
+    # Examples are installed via CMake to share/xvisio/examples
+    # With scikit-build-core, this is relative to the package directory
+    try:
+        import xvisio as _xvisio_mod
+
+        # Get the package directory
+        xvisio_pkg_dir = Path(_xvisio_mod.__file__).parent
+        site_packages_dir = xvisio_pkg_dir.parent
+
+        # Check multiple possible locations (in order of likelihood)
+        candidates = [
+            # CMake install location: share/xvisio/examples relative to package dir
+            # (scikit-build-core installs CMake files relative to wheel.install-dir)
+            xvisio_pkg_dir / "share" / "xvisio" / "examples",
+            # At site-packages root (if installed via MANIFEST.in)
+            site_packages_dir / "examples",
+            # Relative to package parent (for editable installs from source)
+            xvisio_pkg_dir.parent.parent / "examples",
+            # System share location (traditional CMake install)
+            site_packages_dir.parent.parent / "share" / "xvisio" / "examples",
+            # From repo root candidates (source checkout / editable)
+            *_repo_root_candidates(),
+        ]
+
+        for candidate in candidates:
+            if isinstance(candidate, Path) and candidate.exists() and candidate.is_dir():
+                # Verify it has example files
+                if any(candidate.glob("*.py")):
+                    return candidate.resolve()
+    except Exception:
+        pass
+
+    # Fallback: check all sys.path entries
+    for site_packages in sys.path:
+        try:
+            site_path = Path(site_packages)
+            if not site_path.exists():
+                continue
+
+            # Check various locations
+            candidates = [
+                site_path / "xvisio" / "share" / "xvisio" / "examples",
+                site_path / "xvisio" / "examples",
+                site_path / "examples",
+                site_path.parent.parent / "share" / "xvisio" / "examples",
+            ]
+
+            for candidate in candidates:
+                if candidate.exists() and candidate.is_dir():
+                    if any(candidate.glob("*.py")):
+                        return candidate.resolve()
+        except Exception:
+            continue
+
+    return None
+
+
+def examples_cmd(argv: list[str] | None = None) -> int:
+    """Entry point for `xvisio-examples`."""
+    parser = argparse.ArgumentParser(
+        prog="xvisio-examples",
+        description=(
+            "Locate or copy Xvisio example scripts.\n\n"
+            "Examples are included in the pip package and can be run directly.\n"
+            "Use --copy to copy them to a local directory for editing."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--copy",
+        metavar="DEST",
+        type=str,
+        help="Copy examples to the specified directory (default: ./xvisio_examples)",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List available example scripts.",
+    )
+
+    args = parser.parse_args(argv)
+
+    examples_dir = _find_examples_dir()
+
+    if examples_dir is None:
+        print("ERROR: Could not find examples directory in installed package.", file=sys.stderr)
+        print("Examples may not be included in this installation.", file=sys.stderr)
+        print("Try: pip install --force-reinstall xvisio", file=sys.stderr)
+        print("\nAlternatively, clone the repository:", file=sys.stderr)
+        print("  git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git", file=sys.stderr)
+        return 1
+
+    if args.list:
+        print(f"Examples directory: {examples_dir}")
+        print("\nAvailable examples:")
+        for py_file in sorted(examples_dir.glob("*.py")):
+            if py_file.name != "__init__.py":
+                print(f"  - {py_file.name}")
+        return 0
+
+    if args.copy:
+        dest = Path(args.copy).expanduser().resolve()
+    else:
+        dest = Path.cwd() / "xvisio_examples"
+
+    try:
+        if dest.exists():
+            if not dest.is_dir():
+                print(f"ERROR: {dest} exists but is not a directory", file=sys.stderr)
+                return 1
+            response = input(f"Directory {dest} already exists. Overwrite? [y/N]: ")
+            if response.lower() != "y":
+                print("Cancelled.")
+                return 0
+            shutil.rmtree(dest)
+
+        shutil.copytree(examples_dir, dest)
+        print(f"✓ Copied examples to {dest}")
+        print(f"\nTo run an example:")
+        print(f"  cd {dest}")
+        print(f"  python demo_pose_imu.py")
+        return 0
+
+    except Exception as e:
+        print(f"ERROR: Failed to copy examples: {e}", file=sys.stderr)
+        return 1
+
+    # Default: just show location
+    print(f"Examples directory: {examples_dir}")
+    print("\nTo run an example:")
+    print(f"  python {examples_dir}/demo_pose_imu.py")
+    print("\nTo copy examples to a local directory:")
+    print("  xvisio-examples --copy")
+    return 0
 
 
 if __name__ == "__main__":

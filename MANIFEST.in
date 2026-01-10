@@ -8,3 +8,12 @@ recursive-include cpp_core *.cpp *.h CMakeLists.txt
 recursive-include python_bindings *.cpp CMakeLists.txt
 include CMakeLists.txt
 
+# Include examples directory (will be installed as package data)
+graft examples
+
+# Exclude build artifacts
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude *.so
+global-exclude build/
+global-exclude *.egg-info/

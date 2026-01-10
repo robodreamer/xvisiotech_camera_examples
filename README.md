@@ -25,6 +25,22 @@ python3 -c "import xvisio; print(xvisio.discover())"
 
 **Note:** The `--extra-index-url` flag ensures that dependencies (like `numpy`, `spatialmath-python`) are installed from the main PyPI, while `xvisio` comes from TestPyPI. View the package at [test.pypi.org/project/xvisio/](https://test.pypi.org/project/xvisio/).
 
+**Running examples after pip install:**
+
+Examples are included in the pip package. Use the `xvisio-examples` command:
+
+```bash
+# List available examples
+xvisio-examples --list
+
+# Copy examples to local directory
+xvisio-examples --copy
+cd xvisio_examples
+python demo_pose_imu.py
+```
+
+See [PIP_INSTALL.md](PIP_INSTALL.md) for more details on running examples.
+
 <!-- TODO: Uncomment when publishing to PyPI
 **For production use (PyPI):**
 
@@ -200,8 +216,8 @@ pixi run build-dist
 # Upload to TestPyPI
 pixi run upload-testpypi
 
-# Test installation
-pip install --index-url https://test.pypi.org/simple/ xvisio
+# Test installation (use --extra-index-url to also check PyPI for build dependencies)
+pip install --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ xvisio
 ```
 
 **2. Publish to PyPI:**

@@ -84,7 +84,8 @@ pixi run build-dist
 pixi run upload-testpypi
 
 # Test installation (will build from source)
-pip install --index-url https://test.pypi.org/simple/ xvisio
+# Note: Use --extra-index-url to also check PyPI for build dependencies
+pip install --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ xvisio
 ```
 
 ### 2. Publish to PyPI
@@ -122,7 +123,7 @@ pixi run build-dist
 
 # 3. Test on TestPyPI
 pixi run upload-testpypi
-pip install --index-url https://test.pypi.org/simple/ xvisio
+pip install --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ xvisio
 
 # 4. If tests pass, publish to PyPI
 pixi run upload-pypi
@@ -143,6 +144,16 @@ If you try to upload the same version twice, PyPI will reject it. Either:
 ### Authentication Errors
 
 Make sure your `~/.pypirc` is configured correctly with valid API tokens.
+
+### Build Dependencies Not Found When Installing from TestPyPI
+
+If you see errors like `ERROR: Could not find a version that satisfies the requirement scikit-build-core`, this is because TestPyPI doesn't contain build dependencies. Use `--extra-index-url` to also check PyPI:
+
+```bash
+pip install --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ xvisio==0.1.1
+```
+
+This tells pip to look in PyPI first (for build dependencies like `scikit-build-core` and `nanobind`), then fall back to TestPyPI for the `xvisio` package itself.
 
 ### Build Errors
 
