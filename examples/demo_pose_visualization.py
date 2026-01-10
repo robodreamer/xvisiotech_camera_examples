@@ -205,7 +205,11 @@ def main():
     parser = argparse.ArgumentParser(description="Visualize Xvisio pose frames in viser")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("-p", "--port", type=int, default=8080, help="Viser server port (default: 8080)")
+    parser.add_argument("-r", "--rate", type=float, default=100.0, help="Update rate in Hz (default: 100)")
     args = parser.parse_args()
+
+    # Calculate sleep time from rate
+    sleep_time = 1.0 / args.rate if args.rate > 0 else 0.01
 
     print("=== Xvisio Pose Visualization Demo ===\n")
 
@@ -262,6 +266,7 @@ def main():
 
             print("\nVisualization is running!")
             print(f"Open http://localhost:{args.port} in your browser")
+            print(f"Update rate: {args.rate:.0f} Hz (adjust with --rate)")
             print("Use the GUI buttons to reset pose or clear trajectory")
             print("Press Ctrl+C to stop\n")
 
@@ -286,14 +291,15 @@ def main():
                         # IMU might not be available yet
                         pass
 
-                    # Print status (verbose: every second, normal: silent)
+                    # Print status (verbose: ~1 per second, normal: silent)
                     frame_count += 1
-                    if args.verbose and frame_count % 10 == 0:
+                    print_interval = max(1, int(args.rate))  # Print roughly once per second
+                    if args.verbose and frame_count % print_interval == 0:
                         pos = pose.position
                         print(f"[{frame_count:5d}] pos=({pos[0]:+.3f}, {pos[1]:+.3f}, {pos[2]:+.3f}) "
                               f"conf={pose.confidence:.2f}")
 
-                    time.sleep(0.1)  # ~10 Hz update rate
+                    time.sleep(sleep_time)  # Configurable update rate for smooth visualization
 
             except KeyboardInterrupt:
                 print("\n\nStopped by user")

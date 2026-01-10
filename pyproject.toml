@@ -10,10 +10,7 @@ authors = [{ name = "Andy Park", email = "andypark.purdue@gmail.com" }]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-dependencies = [
-    "numpy>=1.26.0",
-    "spatialmath-python>=1.1.0",
-]
+dependencies = ["numpy>=1.26.0", "spatialmath-python>=1.1.0"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
@@ -30,12 +27,8 @@ classifiers = [
 keywords = ["robotics", "slam", "imu", "tracking", "xvisio"]
 
 [project.optional-dependencies]
-visualization = [
-    "viser>=0.1.0",
-]
-examples = [
-    "viser>=0.1.0",
-]
+visualization = ["viser>=0.1.0"]
+examples = ["viser>=0.1.0"]
 
 [project.scripts]
 xvisio-setup = "xvisio.cli:setup_host"
@@ -73,4 +66,3 @@ target-version = ['py310']
 [tool.isort]
 profile = "black"
 line_length = 100
-
