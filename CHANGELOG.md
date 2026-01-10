@@ -1,11 +1,59 @@
 # Changelog
 
-All notable changes to the XvisioTech Camera ROS2 Driver will be documented in this file.
+All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-03-03
+---
+
+## Python SDK (pip package: `xvisio`)
+
+### [0.2.0] - 2025-01-09
+
+Initial release of the ROS-free Python SDK for Xvisio devices.
+
+#### Added
+- **Core Python API**
+  - `xvisio.discover()` - Discover connected Xvisio devices
+  - `xvisio.open()` - Open device with context manager support
+  - `Device.enable(slam=True, imu=True)` - Enable SLAM and/or IMU streams
+  - `Device.pose()` - Get raw pose from SDK
+  - `Device.pose_world_aligned()` - Get pose aligned with world frame
+  - `Device.pose_relative()` - Get pose relative to reference
+  - `Device.imu()` - Get IMU data (accelerometer, gyroscope)
+  - `Device.poses(rate_hz)` - Iterator for continuous pose streaming
+
+- **CLI Commands**
+  - `xvisio-setup` - System setup (udev rules, driver installation)
+  - `xvisio-examples --list` - List available example scripts
+  - `xvisio-examples --copy` - Copy examples to local directory
+
+- **Examples** (included in package)
+  - `demo_pose_imu.py` - Basic pose + IMU demo
+  - `demo_pose_visualization.py` - 3D visualization with viser
+  - `demo_pose_transforms.py` - Pose transform methods demo
+  - `benchmark_pose_rate.py` - Pose update rate benchmark
+
+- **Optional Dependencies**
+  - `xvisio[examples]` - Install with viser for visualization examples
+  - `xvisio[visualization]` - Same as examples
+
+- **Documentation**
+  - Installation guide for pip users (`PIP_INSTALL.md`)
+  - Publishing guide (`PUBLISHING.md`)
+
+#### Technical Details
+- Built with nanobind for high-performance Python bindings
+- scikit-build-core for CMake-based wheel building
+- Compatible with Python 3.10, 3.11, 3.12
+- Linux x86_64 support (requires XVSDK driver)
+
+---
+
+## ROS2 Driver
+
+### [Unreleased] - 2025-03-03
 
 ### Added
 - Optional feature flags to reduce CPU usage and bandwidth

@@ -8,13 +8,12 @@ This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobin
 
 ### Quick start (pip install)
 
-<!-- TODO: When publishing to PyPI, replace TestPyPI section with PyPI section below -->
-
-**For testing the latest development version (TestPyPI):**
-
 ```bash
-# Install from TestPyPI (see https://test.pypi.org/project/xvisio/)
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ xvisio==0.1.1
+# Install from PyPI
+pip install xvisio
+
+# Install with visualization examples (includes viser)
+pip install xvisio[examples]
 
 # Run system setup (one-time, requires sudo)
 sudo xvisio-setup
@@ -23,7 +22,7 @@ sudo xvisio-setup
 python3 -c "import xvisio; print(xvisio.discover())"
 ```
 
-**Note:** The `--extra-index-url` flag ensures that dependencies (like `numpy`, `spatialmath-python`) are installed from the main PyPI, while `xvisio` comes from TestPyPI. View the package at [test.pypi.org/project/xvisio/](https://test.pypi.org/project/xvisio/).
+View the package at [pypi.org/project/xvisio/](https://pypi.org/project/xvisio/).
 
 **Running examples after pip install:**
 
@@ -40,23 +39,6 @@ python demo_pose_imu.py
 ```
 
 See [PIP_INSTALL.md](PIP_INSTALL.md) for more details on running examples.
-
-<!-- TODO: Uncomment when publishing to PyPI
-**For production use (PyPI):**
-
-```bash
-# Install from PyPI
-pip install xvisio
-
-# Run system setup (one-time, requires sudo)
-sudo xvisio-setup
-
-# Test installation
-python3 -c "import xvisio; print(xvisio.discover())"
-```
-
-View the package at [pypi.org/project/xvisio/](https://pypi.org/project/xvisio/).
--->
 
 ### Quick start (source checkout)
 

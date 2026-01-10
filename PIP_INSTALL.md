@@ -1,32 +1,15 @@
 # Installation Guide (pip install)
 
-The `xvisio` package can be installed via `pip` from TestPyPI (for testing) <!-- TODO: or PyPI (for production) --> or from source checkout (for development).
+The `xvisio` package can be installed via `pip` from PyPI or from source checkout (for development).
 
 ## Quick Installation (pip install)
-
-<!-- TODO: When publishing to PyPI, replace TestPyPI section with PyPI section below -->
-
-**For testing the latest development version (TestPyPI):**
-
-```bash
-# Install from TestPyPI (see https://test.pypi.org/project/xvisio/)
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ xvisio==0.1.1
-
-# Run system setup (one-time, requires sudo)
-sudo xvisio-setup
-
-# Test installation
-python3 -c "import xvisio; print(xvisio.discover())"
-```
-
-**Note:** The `--extra-index-url` flag ensures that dependencies (like `numpy`, `spatialmath-python`) are installed from the main PyPI, while `xvisio` comes from TestPyPI. View available versions at [test.pypi.org/project/xvisio/](https://test.pypi.org/project/xvisio/).
-
-<!-- TODO: Uncomment when publishing to PyPI
-**For production use (PyPI):**
 
 ```bash
 # Install from PyPI
 pip install xvisio
+
+# Install with visualization examples (includes viser)
+pip install xvisio[examples]
 
 # Run system setup (one-time, requires sudo)
 sudo xvisio-setup
@@ -36,7 +19,6 @@ python3 -c "import xvisio; print(xvisio.discover())"
 ```
 
 View the package at [pypi.org/project/xvisio/](https://pypi.org/project/xvisio/).
--->
 
 ## Installation from Source Checkout
 
@@ -147,46 +129,26 @@ pip install viser
 
 ### Adding as a Dependency
 
-<!-- TODO: When publishing to PyPI, move PyPI section above TestPyPI section -->
-
-**From TestPyPI (current - for testing):**
-
 **requirements.txt:**
 ```
---extra-index-url https://pypi.org/simple/
---index-url https://test.pypi.org/simple/
-xvisio==0.1.1
-```
-
-**pyproject.toml:**
-```toml
-[[tool.pip.index]]
-name = "testpypi"
-url = "https://test.pypi.org/simple/"
-extra = true
-
-[project]
-dependencies = [
-    "xvisio==0.1.1",
-]
-```
-
-<!-- TODO: Uncomment when publishing to PyPI
-**From PyPI (production):**
-
-**requirements.txt:**
-```
-xvisio>=0.1.0
+xvisio>=0.2.0
 ```
 
 **pyproject.toml:**
 ```toml
 [project]
 dependencies = [
-    "xvisio>=0.1.0",
+    "xvisio>=0.2.0",
 ]
 ```
--->
+
+**With visualization examples:**
+```toml
+[project]
+dependencies = [
+    "xvisio[examples]>=0.2.0",
+]
+```
 
 ### Example: Using in Another Project
 
@@ -268,13 +230,11 @@ If the build fails:
 
 ## Installation Methods Summary
 
-<!-- TODO: When publishing to PyPI, update this table to show PyPI as primary method -->
-
 | Method | Use Case | Command |
 |--------|----------|---------|
-| **TestPyPI** | Testing latest development version | `pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ xvisio==0.1.1` |
-| **Source Checkout** | Development, contributing, or latest unreleased code | `pip install -e . --no-build-isolation` |
-| <!-- TODO: Uncomment when PyPI is published --><!-- **PyPI** | Production use | `pip install xvisio` --> |
+| **PyPI** | Production use | `pip install xvisio` |
+| **PyPI + Examples** | With visualization dependencies | `pip install xvisio[examples]` |
+| **Source Checkout** | Development, contributing | `pip install -e . --no-build-isolation` |
 
 **All methods require**: `sudo xvisio-setup` after installation for system-level setup.
 
