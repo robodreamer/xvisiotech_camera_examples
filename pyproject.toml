@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "xvisio"
-version = "0.1.2"
+version = "0.1.6"
 description = "ROS-free Python SDK for Xvisio XR-50 devices"
 authors = [{ name = "Andy Park", email = "andypark.purdue@gmail.com" }]
 readme = "README.md"
@@ -28,6 +28,14 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["robotics", "slam", "imu", "tracking", "xvisio"]
+
+[project.optional-dependencies]
+visualization = [
+    "viser>=0.1.0",
+]
+examples = [
+    "viser>=0.1.0",
+]
 
 [project.scripts]
 xvisio-setup = "xvisio.cli:setup_host"

@@ -127,12 +127,21 @@ python examples/demo_pose_imu.py
 ### Available Examples
 
 - **`demo_pose_imu.py`** - Basic pose + IMU demo (no extra dependencies)
-- **`demo_pose_visualization.py`** - 3D visualization (requires `viser`: `pip install viser`)
+- **`demo_pose_visualization.py`** - 3D visualization (requires `viser`)
 - **`demo_pose_transforms.py`** - Demonstrates different pose transform methods
 - **`benchmark_pose_rate.py`** - Benchmark pose update rates
 
-**Note**: Examples are standalone scripts that only require the `xvisio` package (already installed via pip). Some examples may require additional dependencies:
-- `demo_pose_visualization.py` requires `viser` (install with `pip install viser`)
+### Installing Example Dependencies
+
+Some examples require additional dependencies. Install them with:
+
+```bash
+# Install with visualization/example dependencies
+pip install xvisio[examples]
+
+# Or install viser separately
+pip install viser
+```
 
 ## Integration into Other Projects
 

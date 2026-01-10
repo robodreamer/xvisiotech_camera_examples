@@ -186,6 +186,8 @@ def examples_cmd(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--copy",
         metavar="DEST",
+        nargs="?",
+        const="xvisio_examples",  # Default if --copy is used without argument
         type=str,
         help="Copy examples to the specified directory (default: ./xvisio_examples)",
     )
@@ -216,31 +218,30 @@ def examples_cmd(argv: list[str] | None = None) -> int:
         return 0
 
     if args.copy:
+        # --copy was used (with or without destination argument)
         dest = Path(args.copy).expanduser().resolve()
-    else:
-        dest = Path.cwd() / "xvisio_examples"
 
-    try:
-        if dest.exists():
-            if not dest.is_dir():
-                print(f"ERROR: {dest} exists but is not a directory", file=sys.stderr)
-                return 1
-            response = input(f"Directory {dest} already exists. Overwrite? [y/N]: ")
-            if response.lower() != "y":
-                print("Cancelled.")
-                return 0
-            shutil.rmtree(dest)
+        try:
+            if dest.exists():
+                if not dest.is_dir():
+                    print(f"ERROR: {dest} exists but is not a directory", file=sys.stderr)
+                    return 1
+                response = input(f"Directory {dest} already exists. Overwrite? [y/N]: ")
+                if response.lower() != "y":
+                    print("Cancelled.")
+                    return 0
+                shutil.rmtree(dest)
 
-        shutil.copytree(examples_dir, dest)
-        print(f"✓ Copied examples to {dest}")
-        print(f"\nTo run an example:")
-        print(f"  cd {dest}")
-        print(f"  python demo_pose_imu.py")
-        return 0
+            shutil.copytree(examples_dir, dest)
+            print(f"✓ Copied examples to {dest}")
+            print(f"\nTo run an example:")
+            print(f"  cd {dest}")
+            print(f"  python demo_pose_imu.py")
+            return 0
 
-    except Exception as e:
-        print(f"ERROR: Failed to copy examples: {e}", file=sys.stderr)
-        return 1
+        except Exception as e:
+            print(f"ERROR: Failed to copy examples: {e}", file=sys.stderr)
+            return 1
 
     # Default: just show location
     print(f"Examples directory: {examples_dir}")

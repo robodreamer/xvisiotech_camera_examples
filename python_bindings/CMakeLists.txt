@@ -36,8 +36,9 @@ add_custom_command(TARGET _xvisio_impl POST_BUILD
 )
 
 # Set RPATH so Python can find libxvisio_core.so
+# Library is installed at xvisio/lib/, module at xvisio/, so use $ORIGIN/lib
 set_target_properties(_xvisio_impl PROPERTIES
-    INSTALL_RPATH "$ORIGIN:$ORIGIN/../lib"
+    INSTALL_RPATH "$ORIGIN:$ORIGIN/lib"
     BUILD_RPATH "$ORIGIN:$<TARGET_FILE_DIR:xvisio_core>"
 )
 
