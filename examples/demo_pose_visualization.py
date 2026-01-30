@@ -48,6 +48,7 @@ class XvisioPoseVisualizer:
         self.gui = self.server.gui
         self.trajectory_length = trajectory_length
         self._on_reset_pose = on_reset_pose
+        self._show_imu_checkbox = None
 
         # Trajectory storage (position history)
         self.trajectory = deque(maxlen=trajectory_length)
@@ -102,11 +103,18 @@ class XvisioPoseVisualizer:
             # Add separator
             self.gui.add_markdown("---")
 
+            # Toggle IMU vector visualization (off by default)
+            self._show_imu_checkbox = self.gui.add_checkbox(
+                "Show IMU Vector",
+                initial_value=False,
+            )
+
             # Info text
             self.gui.add_markdown(
                 "**Controls:**\n"
                 "- **Reset Pose Reference**: Set current pose as origin\n"
-                "- **Clear Trajectory**: Remove path history"
+                "- **Clear Trajectory**: Remove path history\n"
+                "- **Show IMU Vector**: Display IMU acceleration vector"
             )
 
     def update_pose(self, pose: xvisio.Pose):
@@ -166,6 +174,10 @@ class XvisioPoseVisualizer:
             imu: IMU sample from xvisio
             pose: Current pose (for position)
         """
+        if not self.is_imu_enabled():
+            self.clear_imu()
+            return
+
         position = np.array(pose.position, dtype=np.float64)
         accel = np.array(imu.accel, dtype=np.float64)
 
@@ -192,6 +204,18 @@ class XvisioPoseVisualizer:
             else:
                 self.imu_vector.points = seg_points
                 self.imu_vector.colors = colors
+
+    def is_imu_enabled(self) -> bool:
+        """Return True when IMU visualization is enabled."""
+        if self._show_imu_checkbox is None:
+            return False
+        return bool(self._show_imu_checkbox.value)
+
+    def clear_imu(self):
+        """Remove IMU visualization from the scene."""
+        if self.imu_vector is not None:
+            self.imu_vector.remove()
+            self.imu_vector = None
 
     def reset_trajectory(self):
         """Clear the trajectory history."""
@@ -284,12 +308,15 @@ def main():
                     viz.update_pose(pose)
 
                     # Get IMU data
-                    try:
-                        imu = dev.imu()
-                        viz.update_imu(imu, pose)
-                    except RuntimeError:
-                        # IMU might not be available yet
-                        pass
+                    if viz.is_imu_enabled():
+                        try:
+                            imu = dev.imu()
+                            viz.update_imu(imu, pose)
+                        except RuntimeError:
+                            # IMU might not be available yet
+                            pass
+                    else:
+                        viz.clear_imu()
 
                     # Print status (verbose: ~1 per second, normal: silent)
                     frame_count += 1
