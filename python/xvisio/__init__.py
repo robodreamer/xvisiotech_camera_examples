@@ -11,8 +11,8 @@ Example usage:
             print(pose.position, pose.quat_wxyz, imu.accel)
 """
 
-from ._highlevel import Device, open, discover
-from .types import Pose, ImuSample, DeviceInfo
+from ._highlevel import Device, open, discover, open_controller, discover_controllers
+from .types import Pose, ImuSample, DeviceInfo, ControllerData
 
 __version__ = "0.1.0"
 
@@ -20,8 +20,11 @@ __all__ = [
     "Device",
     "open",
     "discover",
+    "open_controller",
+    "discover_controllers",
     "Pose",
     "ImuSample",
     "DeviceInfo",
+    "ControllerData",
 ]
 

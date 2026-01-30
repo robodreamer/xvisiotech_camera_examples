@@ -35,6 +35,7 @@ class XvisioPoseVisualizer:
         port: int = 8080,
         trajectory_length: int = 500,
         on_reset_pose: Optional[Callable[[], None]] = None,
+        controller_only_mode: bool = False,
     ):
         """Initialize the visualizer.
 
@@ -42,6 +43,7 @@ class XvisioPoseVisualizer:
             port: Port for viser web server
             trajectory_length: Maximum number of poses to keep in trajectory
             on_reset_pose: Callback to reset pose reference on device
+            controller_only_mode: If True, always show controller frames (no checkbox).
         """
         self.server = viser.ViserServer(port=port)
         self.scene = self.server.scene
@@ -49,6 +51,7 @@ class XvisioPoseVisualizer:
         self.trajectory_length = trajectory_length
         self._on_reset_pose = on_reset_pose
         self._show_imu_checkbox = None
+        self._controller_only_mode = controller_only_mode
 
         # Trajectory storage (position history)
         self.trajectory = deque(maxlen=trajectory_length)
@@ -57,6 +60,10 @@ class XvisioPoseVisualizer:
         self.pose_frame: Optional[Any] = None
         self.trajectory_line: Optional[Any] = None
         self.imu_vector: Optional[Any] = None
+        self.controller_left_frame: Optional[Any] = None
+        self.controller_right_frame: Optional[Any] = None
+        self._show_controller_checkbox = None
+        self._controller_port_input: Optional[Any] = None
 
         # Add grid for reference
         self.scene.add_grid(
@@ -109,12 +116,20 @@ class XvisioPoseVisualizer:
                 initial_value=False,
             )
 
+            # Toggle controller visualization (off by default)
+            if not self._controller_only_mode:
+                self._show_controller_checkbox = self.gui.add_checkbox(
+                    "Show Controller",
+                    initial_value=False,
+                )
+
             # Info text
             self.gui.add_markdown(
                 "**Controls:**\n"
                 "- **Reset Pose Reference**: Set current pose as origin\n"
                 "- **Clear Trajectory**: Remove path history\n"
-                "- **Show IMU Vector**: Display IMU acceleration vector"
+                "- **Show IMU Vector**: Display IMU acceleration vector\n"
+                "- **Show Controller**: Display Seer controller frames"
             )
 
     def update_pose(self, pose: xvisio.Pose):
@@ -217,6 +232,55 @@ class XvisioPoseVisualizer:
             self.imu_vector.remove()
             self.imu_vector = None
 
+    def is_controller_enabled(self) -> bool:
+        """Return True when controller visualization is enabled."""
+        if self._controller_only_mode:
+            return True
+        if self._show_controller_checkbox is None:
+            return False
+        return bool(self._show_controller_checkbox.value)
+
+    def get_controller_port(self) -> str:
+        """Return the controller serial port from GUI."""
+        if self._controller_port_input is None:
+            return "/dev/ttyUSB0"
+        return str(self._controller_port_input.value).strip() or "/dev/ttyUSB0"
+
+    def update_controller(self, left: Optional[xvisio.ControllerData], right: Optional[xvisio.ControllerData]):
+        """Update controller frame visualization (left=blue, right=green)."""
+        if not self.is_controller_enabled():
+            self.clear_controller()
+            return
+        for data, path, color, frame_attr in [
+            (left, "/controller/left", (0.2, 0.4, 1.0), "controller_left_frame"),
+            (right, "/controller/right", (0.2, 0.9, 0.3), "controller_right_frame"),
+        ]:
+            if data is None:
+                continue
+            pos = np.array(data.position, dtype=np.float64)
+            quat = np.array(data.quat_wxyz, dtype=np.float64)
+            frame = getattr(self, frame_attr)
+            if frame is None:
+                frame = self.scene.add_frame(
+                    path,
+                    wxyz=tuple(quat),
+                    position=tuple(pos),
+                    axes_length=0.08,
+                    axes_radius=0.004,
+                )
+                setattr(self, frame_attr, frame)
+            else:
+                frame.wxyz = tuple(quat)
+                frame.position = tuple(pos)
+
+    def clear_controller(self):
+        """Remove controller frames from the scene."""
+        for attr in ("controller_left_frame", "controller_right_frame"):
+            frame = getattr(self, attr, None)
+            if frame is not None:
+                frame.remove()
+                setattr(self, attr, None)
+
     def reset_trajectory(self):
         """Clear the trajectory history."""
         self.trajectory.clear()
@@ -230,6 +294,7 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("-p", "--port", type=int, default=8080, help="Viser server port (default: 8080)")
     parser.add_argument("-r", "--rate", type=float, default=100.0, help="Update rate in Hz (default: 100)")
+    parser.add_argument("--controller-port", type=str, default="/dev/ttyUSB0", help="Controller serial port (default: /dev/ttyUSB0)")
     args = parser.parse_args()
 
     # Calculate sleep time from rate
@@ -242,23 +307,92 @@ def main():
         print("Install with: pip install viser")
         return
 
-    # Discover devices
+    # Discover: try camera first, then controller
     print("Discovering devices...")
     devices = xvisio.discover()
+    controller_devices = []
     if not devices:
-        print("ERROR: No Xvisio devices found!")
-        print("\nTroubleshooting:")
-        print("1. Make sure device is connected via USB")
-        print("2. Run 'sudo ./scripts/setup_host.sh' to install udev rules")
-        print("3. If you were just added to plugdev group, log out and log back in")
-        return
+        controller_devices = xvisio.discover_controllers()
+        if not controller_devices:
+            print("ERROR: No Xvisio devices (camera or controller) found!")
+            print("\nTroubleshooting:")
+            print("1. Camera: connect XR-50 via USB; run 'sudo ./scripts/setup_host.sh'")
+            print("2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB")
+            print("3. If you were just added to plugdev group, log out and log back in")
+            return
 
-    print(f"Found {len(devices)} device(s):")
-    for dev in devices:
-        print(f"  - Serial: {dev.serial_number}, Model: {dev.model}")
+    use_controller_only = len(devices) == 0 and len(controller_devices) > 0
+    if use_controller_only:
+        devices = controller_devices
+        print("No camera found; using Seer controller only.")
+    else:
+        print(f"Found {len(devices)} camera device(s):")
+        for d in devices:
+            print(f"  - Serial: {d.serial_number}, Model: {d.model}")
 
     print("\nOpening device...")
     try:
+        if use_controller_only:
+            dev = xvisio.open_controller(port=args.controller_port)
+
+            # Initialize controller pose reference for relative tracking
+            print("Waiting for controller data to initialize...")
+            time.sleep(0.5)
+            dev.reset_controller_reference()
+            print("✓ Controller pose reference initialized\n")
+
+            def on_reset_controller():
+                dev.reset_controller_reference()
+                viz.reset_trajectory()
+
+            viz = XvisioPoseVisualizer(
+                port=args.port,
+                on_reset_pose=on_reset_controller,
+                controller_only_mode=True,
+            )
+
+            print("\nVisualization is running (controller mode)!")
+            print(f"Open http://localhost:{args.port} in your browser")
+            print("Left/right controller frames with world-aligned orientation")
+            print("Use 'Reset Pose Reference' button to set current pose as origin")
+            print("Press Ctrl+C to stop\n")
+            frame_count = 0
+            try:
+                while True:
+                    # Use relative controller pose (world-aligned with offset from reference)
+                    left, right = dev.controller_relative()
+
+                    # Use first available pose for single "pose" trajectory
+                    if left is not None:
+                        from types import SimpleNamespace
+                        pose_like = SimpleNamespace(
+                            position=left.position,
+                            quat_wxyz=left.quat_wxyz,
+                            confidence=1.0,
+                        )
+                        viz.update_pose(pose_like)
+                    if right is not None and left is None:
+                        from types import SimpleNamespace
+                        pose_like = SimpleNamespace(
+                            position=right.position,
+                            quat_wxyz=right.quat_wxyz,
+                            confidence=1.0,
+                        )
+                        viz.update_pose(pose_like)
+                    viz.update_controller(left, right)
+                    frame_count += 1
+                    if (left or right) and frame_count % max(1, int(args.rate)) == 0:
+                        for name, c in [("L", left), ("R", right)]:
+                            if c is not None:
+                                print(f"  {name}: pos=({c.position[0]:+.3f},{c.position[1]:+.3f},{c.position[2]:+.3f}) "
+                                      f"trigger={c.key_trigger} side={c.key_side} rocker=({c.rocker_x},{c.rocker_y}) key={c.key}")
+                    time.sleep(sleep_time)
+            except KeyboardInterrupt:
+                print("\n\nStopped by user")
+                print(f"Collected {len(viz.trajectory)} trajectory points")
+            dev.close()
+            return
+        # Camera mode
         with xvisio.open() as dev:
             print(f"Opened device: {dev.serial_number}\n")
 
@@ -274,63 +408,72 @@ def main():
             print("✓ Ready\n")
 
             # Initialize pose reference for relative tracking
-            # This matches the ROS2 teleop handler behavior:
-            # - Store initial position and rotation
-            # - All subsequent poses are relative to this initial pose
-            # - Apply R_offset to align camera frame with world frame
             dev.reset_pose_reference()
             print("✓ Pose reference initialized\n")
 
-            # Create visualizer with reset callback
-            print("Starting visualization...")
             viz = XvisioPoseVisualizer(
                 port=args.port,
                 on_reset_pose=lambda: (dev.reset_pose_reference(), viz.reset_trajectory()),
             )
 
+            # Optional: open controller if available (for "Show Controller" checkbox)
+            controller_dev = None
+            try:
+                controller_devices_check = xvisio.discover_controllers()
+                if controller_devices_check:
+                    controller_dev = xvisio.open_controller(port=args.controller_port)
+            except Exception:
+                controller_dev = None
+
             print("\nVisualization is running!")
             print(f"Open http://localhost:{args.port} in your browser")
             print(f"Update rate: {args.rate:.0f} Hz (adjust with --rate)")
             print("Use the GUI buttons to reset pose or clear trajectory")
+            if controller_dev:
+                print("Check 'Show Controller' to display Seer controller pose(s)")
             print("Press Ctrl+C to stop\n")
 
             frame_count = 0
             try:
                 while True:
-                    # Get RELATIVE pose (matches ROS2 teleop handler behavior)
-                    # This applies:
-                    #   pos_rel = R_offset @ R_init.T @ (pos - pos_init)
-                    #   rot_rel = R_offset @ R_init.T @ R @ R_offset.T
-                    # Where R_offset = [[0,0,1],[1,0,0],[0,1,0]] aligns camera->world
                     pose = dev.pose_relative()
-
-                    # Update pose visualization
                     viz.update_pose(pose)
 
-                    # Get IMU data
                     if viz.is_imu_enabled():
                         try:
                             imu = dev.imu()
                             viz.update_imu(imu, pose)
                         except RuntimeError:
-                            # IMU might not be available yet
                             pass
                     else:
                         viz.clear_imu()
 
-                    # Print status (verbose: ~1 per second, normal: silent)
+                    if controller_dev and viz.is_controller_enabled():
+                        left, right = controller_dev.controller()
+                        viz.update_controller(left, right)
+                    else:
+                        viz.clear_controller()
+
                     frame_count += 1
-                    print_interval = max(1, int(args.rate))  # Print roughly once per second
+                    print_interval = max(1, int(args.rate))
                     if args.verbose and frame_count % print_interval == 0:
                         pos = pose.position
                         print(f"[{frame_count:5d}] pos=({pos[0]:+.3f}, {pos[1]:+.3f}, {pos[2]:+.3f}) "
                               f"conf={pose.confidence:.2f}")
+                        if controller_dev and viz.is_controller_enabled():
+                            for name, c in [("L", left), ("R", right)]:
+                                if c is not None:
+                                    print(f"  {name}: trigger={c.key_trigger} side={c.key_side} "
+                                          f"rocker=({c.rocker_x},{c.rocker_y}) key={c.key}")
 
-                    time.sleep(sleep_time)  # Configurable update rate for smooth visualization
+                    time.sleep(sleep_time)
 
             except KeyboardInterrupt:
                 print("\n\nStopped by user")
                 print(f"Collected {len(viz.trajectory)} trajectory points")
+            finally:
+                if controller_dev is not None:
+                    controller_dev.close()
 
     except Exception as e:
         print(f"\nERROR: {e}")

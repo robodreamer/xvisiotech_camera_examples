@@ -1,10 +1,20 @@
 # XvisioTech Camera Examples
 
-This repository contains the driver and examples for using [XvisioTech](https://www.xvisiotech.com/) cameras, specifically the XR-50 and DS-80 models. It provides the necessary instructions to install the driver, set up the ROS2 package, and get started with the camera.
+This repository contains the driver and examples for using [XvisioTech](https://www.xvisiotech.com/) devices:
+
+- **XR-50** - 6DoF SLAM tracking camera with stereo fisheye, RGB, and IMU
+- **DS-80** - 6DoF SLAM tracking camera with ToF depth sensor
+- **Seer Wireless Controller** - 6DoF motion controller with buttons and joystick
+
+It provides the necessary instructions to install the driver, set up the ROS2 package, and get started with the devices.
 
 ## ROS-free Python SDK (Recommended for scripting)
 
-This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobind**. It lets you access **Pose (SLAM)** and **IMU** data directly from Python with minimal setup.
+This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobind**. It lets you access **Pose (SLAM)**, **IMU**, and **Controller** data directly from Python with minimal setup.
+
+**Supported devices:**
+- XR-50 / DS-80 cameras (pose, IMU)
+- Seer wireless controller (pose, buttons, joystick)
 
 ### Quick start (pip install)
 
@@ -114,6 +124,7 @@ See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
 ### Minimal usage example
 
+**Camera (XR-50 / DS-80):**
 ```python
 import xvisio
 
@@ -125,6 +136,22 @@ with xvisio.open() as dev:
 
     print(pose.position, pose.quat_wxyz, pose.confidence)
     print(imu.accel, imu.gyro)
+```
+
+**Seer Wireless Controller:**
+```python
+import xvisio
+
+# Open controller (auto-detects on /dev/ttyUSB0)
+dev = xvisio.open_controller()
+
+left, right = dev.controller()
+if right:
+    print(right.position, right.quat_wxyz)
+    print(f"trigger={right.key_trigger}, side={right.key_side}")
+    print(f"rocker=({right.rocker_x}, {right.rocker_y}), key={right.key}")
+
+dev.close()
 ```
 
 ### Running tests

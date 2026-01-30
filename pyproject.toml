@@ -4,8 +4,8 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "xvisio"
-version = "0.2.0"
-description = "ROS-free Python SDK for Xvisio XR-50 devices"
+version = "0.3.0"
+description = "ROS-free Python SDK for Xvisio XR-50 and Seer controller devices"
 authors = [{ name = "Andy Park", email = "andypark.purdue@gmail.com" }]
 readme = "README.md"
 license = { text = "MIT" }

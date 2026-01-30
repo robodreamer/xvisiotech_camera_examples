@@ -11,28 +11,70 @@ Note: Uses pose_world_aligned() by default, which applies rotation offset
 to align camera frame with world frame (matching ROS2 teleop handler).
 """
 
+import argparse
 import xvisio
 import time
 
 def main():
+    parser = argparse.ArgumentParser(description="Xvisio pose + IMU demo")
+    parser.add_argument(
+        "--controller-port",
+        type=str,
+        default="/dev/ttyUSB0",
+        help="Controller serial port (default: /dev/ttyUSB0)",
+    )
+    args = parser.parse_args()
+
     print("=== Xvisio Pose + IMU Demo ===\n")
 
     # Check for devices
     print("Discovering devices...")
     devices = xvisio.discover()
+    controller_devices = []
     if not devices:
-        print("ERROR: No Xvisio devices found!")
-        print("\nTroubleshooting:")
-        print("1. Make sure device is connected via USB")
-        print("2. Run 'sudo ./scripts/setup_host.sh' to install udev rules")
-        print("3. If you were just added to plugdev group, log out and log back in")
-        return
-    print(f"Found {len(devices)} device(s):")
-    for dev in devices:
-        print(f"  - Serial: {dev.serial_number}, Model: {dev.model}")
+        controller_devices = xvisio.discover_controllers()
+        if not controller_devices:
+            print("ERROR: No Xvisio devices found!")
+            print("\nTroubleshooting:")
+            print("1. Camera: connect XR-50 via USB; run 'sudo ./scripts/setup_host.sh'")
+            print("2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB")
+            print("3. If you were just added to plugdev group, log out and log back in")
+            return
+        print("No camera found; using Seer controller only.")
+    else:
+        print(f"Found {len(devices)} device(s):")
+        for dev in devices:
+            print(f"  - Serial: {dev.serial_number}, Model: {dev.model}")
 
     print("\nOpening device...")
     try:
+        if not devices and controller_devices:
+            dev = xvisio.open_controller(port=args.controller_port)
+            print("Opened controller device\n")
+            print("Collecting controller data for 10 seconds (Ctrl+C to stop early)...\n")
+            start_time = time.time()
+            count = 0
+            try:
+                while time.time() - start_time < 10.0:
+                    left, right = dev.controller()
+                    for name, c in [("L", left), ("R", right)]:
+                        if c is None:
+                            continue
+                        pos_str = f"({c.position[0]:.3f},{c.position[1]:.3f},{c.position[2]:.3f})"
+                        quat_str = f"({c.quat_wxyz[0]:.3f},{c.quat_wxyz[1]:.3f},{c.quat_wxyz[2]:.3f},{c.quat_wxyz[3]:.3f})"
+                        print(
+                            f"{name} {pos_str:<30} {quat_str:<35} "
+                            f"trigger={c.key_trigger} side={c.key_side} "
+                            f"rocker=({c.rocker_x},{c.rocker_y}) key={c.key}"
+                        )
+                    count += 1
+                    time.sleep(0.1)
+            except KeyboardInterrupt:
+                print("\n\nInterrupted by user")
+            print(f"\n✓ Collected {count} samples")
+            dev.close()
+            return
+
         with xvisio.open() as dev:
             print(f"Opened device: {dev.serial_number}\n")
 

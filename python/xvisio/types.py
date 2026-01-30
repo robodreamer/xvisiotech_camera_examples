@@ -30,6 +30,20 @@ class ImuSample:
 
 
 @dataclass
+class ControllerData:
+    """Seer wireless controller data (pose + buttons)."""
+    type: str  # "left" or "right"
+    position: Tuple[float, float, float]
+    quat_wxyz: Tuple[float, float, float, float]  # w, x, y, z
+    host_timestamp_s: float
+    key_trigger: int
+    key_side: int
+    rocker_x: int
+    rocker_y: int
+    key: int
+
+
+@dataclass
 class DeviceInfo:
     """Information about a discovered device."""
     serial_number: str

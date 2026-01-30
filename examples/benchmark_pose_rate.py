@@ -15,11 +15,11 @@ import argparse
 from collections import deque
 
 
-def run_benchmark(dev: xvisio.Device, duration_s: float, warmup_s: float = 2.0) -> dict:
+def run_benchmark(get_sample, duration_s: float, warmup_s: float = 2.0) -> dict:
     """Run pose rate benchmark.
 
     Args:
-        dev: Opened xvisio device with SLAM enabled
+        get_sample: Callable returning (position, edge_ts_us or None)
         duration_s: Duration of benchmark in seconds
         warmup_s: Warmup period before measuring
 
@@ -30,7 +30,7 @@ def run_benchmark(dev: xvisio.Device, duration_s: float, warmup_s: float = 2.0) 
     warmup_start = time.perf_counter()
     while time.perf_counter() - warmup_start < warmup_s:
         try:
-            dev.pose()
+            get_sample()
         except RuntimeError:
             pass
 
@@ -61,7 +61,7 @@ def run_benchmark(dev: xvisio.Device, duration_s: float, warmup_s: float = 2.0) 
             break
 
         try:
-            pose = dev.pose()
+            position, edge_ts = get_sample()
             sample_count += 1
 
             # Record host-side timing
@@ -69,8 +69,7 @@ def run_benchmark(dev: xvisio.Device, duration_s: float, warmup_s: float = 2.0) 
             last_time = current_time
 
             # Detect actual pose updates by checking if position changed
-            current_position = np.array(pose.position)
-            edge_ts = pose.edge_timestamp_us
+            current_position = np.array(position)
 
             if last_position is not None:
                 position_change = np.linalg.norm(current_position - last_position)
@@ -80,7 +79,7 @@ def run_benchmark(dev: xvisio.Device, duration_s: float, warmup_s: float = 2.0) 
                     pose_update_times.append(current_time)
 
                     # Also track edge timestamp jump
-                    if last_edge_ts is not None:
+                    if edge_ts is not None and last_edge_ts is not None:
                         ts_jump = edge_ts - last_edge_ts
                         if ts_jump > 0:  # Ignore negative jumps (wraparound)
                             edge_ts_jumps.append(ts_jump)
@@ -91,7 +90,8 @@ def run_benchmark(dev: xvisio.Device, duration_s: float, warmup_s: float = 2.0) 
                 pose_update_times.append(current_time)
 
             last_position = current_position
-            last_edge_ts = edge_ts
+            if edge_ts is not None:
+                last_edge_ts = edge_ts
 
         except RuntimeError:
             error_count += 1
@@ -221,6 +221,12 @@ Examples:
         default=2.0,
         help="Warmup duration in seconds (default: 2)"
     )
+    parser.add_argument(
+        "--controller-port",
+        type=str,
+        default="/dev/ttyUSB0",
+        help="Controller serial port (default: /dev/ttyUSB0)"
+    )
     args = parser.parse_args()
 
     print("=== Xvisio Pose Rate Benchmark ===\n")
@@ -228,19 +234,39 @@ Examples:
     # Discover devices
     print("Discovering devices...")
     devices = xvisio.discover()
+    controller_devices = []
     if not devices:
-        print("ERROR: No Xvisio devices found!")
-        print("\nTroubleshooting:")
-        print("1. Make sure device is connected via USB")
-        print("2. Run 'sudo ./scripts/setup_host.sh' to install udev rules")
-        return
-
-    print(f"Found {len(devices)} device(s)")
-    for dev in devices:
-        print(f"  - Serial: {dev.serial_number}, Model: {dev.model}")
+        controller_devices = xvisio.discover_controllers()
+        if not controller_devices:
+            print("ERROR: No Xvisio devices found!")
+            print("\nTroubleshooting:")
+            print("1. Camera: connect XR-50 via USB; run 'sudo ./scripts/setup_host.sh'")
+            print("2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB")
+            return
+        print("No camera found; using Seer controller only.")
+    else:
+        print(f"Found {len(devices)} device(s)")
+        for dev in devices:
+            print(f"  - Serial: {dev.serial_number}, Model: {dev.model}")
 
     print("\nOpening device...")
     try:
+        if not devices and controller_devices:
+            dev = xvisio.open_controller(port=args.controller_port)
+            print("Opened controller device\n")
+
+            def get_sample():
+                left, right = dev.controller()
+                sample = left or right
+                if sample is None:
+                    raise RuntimeError("No controller data available yet")
+                return sample.position, None
+
+            results = run_benchmark(get_sample, args.duration, args.warmup)
+            print_results(results)
+            dev.close()
+            return
+
         with xvisio.open() as dev:
             print(f"Opened device: {dev.serial_number}\n")
 
@@ -250,7 +276,11 @@ Examples:
             print("✓ SLAM enabled\n")
 
             # Run benchmark
-            results = run_benchmark(dev, args.duration, args.warmup)
+            def get_sample():
+                pose = dev.pose()
+                return pose.position, pose.edge_timestamp_us
+
+            results = run_benchmark(get_sample, args.duration, args.warmup)
 
             # Print results
             print_results(results)

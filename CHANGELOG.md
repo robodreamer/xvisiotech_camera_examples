@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Python SDK (pip package: `xvisio`)
 
+### [0.3.0] - 2026-01-30
+
+Added support for Seer wireless controller.
+
+#### Added
+- **Seer Controller Support**
+  - `xvisio.discover_controllers()` - Discover connected Seer wireless controllers
+  - `xvisio.open_controller(port)` - Open controller device with auto-start streaming
+  - `Device.enable_controller(port)` - Start controller streaming on a device
+  - `Device.disable_controller()` - Stop controller streaming
+  - `Device.controller()` - Get left/right controller data (pose, buttons)
+  - `Device.controller_left()` / `Device.controller_right()` - Get individual controller data
+  - `ControllerData` dataclass with position, quaternion, and button states (trigger, side, rocker, key)
+
+- **Example Updates**
+  - All examples now auto-detect device type (camera vs controller)
+  - Controller-only mode for `demo_pose_imu.py`, `demo_pose_visualization.py`, `demo_pose_transforms.py`, `benchmark_pose_rate.py`
+  - Button state display in controller mode
+  - Optional `--controller-port` argument (defaults to `/dev/ttyUSB0`)
+
+- **Visualization**
+  - Optional IMU vector display (checkbox, off by default)
+  - Left/right controller frame visualization with distinct colors
+
+#### Fixed
+- Fixed wireless controller discovery (use `getDevices()` instead of `getDevicesUntilTimeout()` for controller mode)
+- Fixed controller relative pose calculation to use raw poses with rotation offset applied in transform formula (matching ROS2 teleop handler)
+- Fixed "Reset Pose Reference" button in visualization demo for controller mode
+- Fixed controller position sign inversion (rotation offset differs from camera, requires position negation)
+- Added shared `_compute_relative_transform()` helper to ensure consistent transform logic between camera and controller
+
+---
+
 ### [0.2.0] - 2025-01-09
 
 Initial release of the ROS-free Python SDK for Xvisio devices.
