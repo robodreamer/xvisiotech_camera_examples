@@ -11,6 +11,10 @@ include CMakeLists.txt
 # Include examples directory (will be installed as package data)
 graft examples
 
+# Exclude firmware files (large binary images)
+global-exclude *.img
+prune firmware
+
 # Exclude build artifacts
 global-exclude *.pyc
 global-exclude __pycache__
