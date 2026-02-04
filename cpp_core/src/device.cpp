@@ -340,29 +340,59 @@ void Device::controller_callback(const xv::WirelessControllerData &data) {
 
 bool Device::start_controller(const std::string &port) {
   if (!m_device || !m_device->wirelessController()) {
+    std::cerr
+        << "[xvisio] start_controller: device or wirelessController is null"
+        << std::endl;
     return false;
   }
   if (m_controller_running) {
     return true;
   }
-  {
-    std::lock_guard<std::mutex> lock(m_controller_mutex);
-    m_controller_left_available = false;
-    m_controller_right_available = false;
-  }
-  m_device->wirelessController()->setSerialPointName(port);
-  auto cb = [this](const xv::WirelessControllerData &data) {
-    this->controller_callback(data);
-  };
-  m_controller_callback_id =
-      m_device->wirelessController()->registerWirelessControllerDataCallback(
-          cb);
-  if (m_controller_callback_id < 0) {
+
+  try {
+    {
+      std::lock_guard<std::mutex> lock(m_controller_mutex);
+      m_controller_left_available = false;
+      m_controller_right_available = false;
+    }
+
+    std::cerr << "[xvisio] start_controller: setting serial port to " << port
+              << std::endl;
+    m_device->wirelessController()->setSerialPointName(port);
+
+    std::cerr << "[xvisio] start_controller: registering callback" << std::endl;
+    auto cb = [this](const xv::WirelessControllerData &data) {
+      this->controller_callback(data);
+    };
+    m_controller_callback_id =
+        m_device->wirelessController()->registerWirelessControllerDataCallback(
+            cb);
+    if (m_controller_callback_id < 0) {
+      std::cerr << "[xvisio] start_controller: callback registration failed"
+                << std::endl;
+      return false;
+    }
+
+    std::cerr << "[xvisio] start_controller: starting controller" << std::endl;
+    m_device->wirelessController()->start();
+    m_controller_running = true;
+    std::cerr << "[xvisio] start_controller: success" << std::endl;
+    return true;
+  } catch (const std::bad_alloc &e) {
+    std::cerr << "[xvisio] start_controller: std::bad_alloc - " << e.what()
+              << std::endl;
+    std::cerr << "[xvisio] This usually indicates memory pressure. Try closing "
+                 "other applications."
+              << std::endl;
+    return false;
+  } catch (const std::exception &e) {
+    std::cerr << "[xvisio] start_controller: exception - " << e.what()
+              << std::endl;
+    return false;
+  } catch (...) {
+    std::cerr << "[xvisio] start_controller: unknown exception" << std::endl;
     return false;
   }
-  m_device->wirelessController()->start();
-  m_controller_running = true;
-  return true;
 }
 
 bool Device::stop_controller() {
@@ -407,45 +437,65 @@ std::vector<DeviceInfo> discover_devices(double timeout_s,
                                          xv::DeviceSupport device_support) {
   std::vector<DeviceInfo> devices;
 
-  // Set log level to err to suppress info/warn messages (including stereo frame
-  // warnings) Users can still see errors and critical messages
-  xv::setLogLevel(xv::LogLevel::err);
-  std::map<std::string, std::shared_ptr<xv::Device>> device_map;
+  try {
+    // Set log level to err to suppress info/warn messages (including stereo
+    // frame warnings) Users can still see errors and critical messages
+    xv::setLogLevel(xv::LogLevel::err);
+    std::map<std::string, std::shared_ptr<xv::Device>> device_map;
 
-  // Try to read config file if it exists
-  std::string json = "";
-  std::string jsonPath = "/etc/xvisio/config.json";
-  std::ifstream ifs(jsonPath);
-  if (ifs.is_open()) {
-    std::stringstream fbuf;
-    fbuf << ifs.rdbuf();
-    json = fbuf.str();
-    ifs.close();
-  }
-
-  // For wireless controller, always use getDevices(0.0) -
-  // getDevicesUntilTimeout doesn't work for controller discovery
-  if (device_support == xv::DeviceSupport::ONLY_WIRELESS_CONTROLLER) {
-    device_map = xv::getDevices(0.0, json, nullptr, xv::SlamStartMode::Normal,
-                                device_support);
-  } else if (timeout_s > 0.0) {
-    device_map = xv::getDevicesUntilTimeout(
-        timeout_s, json, xv::SlamStartMode::Normal, device_support);
-  } else {
-    device_map = xv::getDevices(0.0, json, nullptr, xv::SlamStartMode::Normal,
-                                device_support);
-  }
-
-  for (const auto &pair : device_map) {
-    DeviceInfo info;
-    info.serial_number = pair.first;
-    // Could extract model from device if available
-    if (device_support == xv::DeviceSupport::ONLY_WIRELESS_CONTROLLER) {
-      info.model = "Seer Controller";
-    } else {
-      info.model = "XR-50";
+    // Try to read config file if it exists
+    std::string json = "";
+    std::string jsonPath = "/etc/xvisio/config.json";
+    std::ifstream ifs(jsonPath);
+    if (ifs.is_open()) {
+      std::stringstream fbuf;
+      fbuf << ifs.rdbuf();
+      json = fbuf.str();
+      ifs.close();
     }
-    devices.push_back(info);
+
+    std::cerr << "[xvisio] discover_devices: calling xv::getDevices..."
+              << std::endl;
+
+    // For wireless controller, always use getDevices(0.0) -
+    // getDevicesUntilTimeout doesn't work for controller discovery
+    if (device_support == xv::DeviceSupport::ONLY_WIRELESS_CONTROLLER) {
+      device_map = xv::getDevices(0.0, json, nullptr, xv::SlamStartMode::Normal,
+                                  device_support);
+    } else if (timeout_s > 0.0) {
+      device_map = xv::getDevicesUntilTimeout(
+          timeout_s, json, xv::SlamStartMode::Normal, device_support);
+    } else {
+      device_map = xv::getDevices(0.0, json, nullptr, xv::SlamStartMode::Normal,
+                                  device_support);
+    }
+
+    std::cerr << "[xvisio] discover_devices: found " << device_map.size()
+              << " device(s)" << std::endl;
+
+    for (const auto &pair : device_map) {
+      DeviceInfo info;
+      info.serial_number = pair.first;
+      // Could extract model from device if available
+      if (device_support == xv::DeviceSupport::ONLY_WIRELESS_CONTROLLER) {
+        info.model = "Seer Controller";
+      } else {
+        info.model = "XR-50";
+      }
+      devices.push_back(info);
+    }
+  } catch (const std::bad_alloc &e) {
+    std::cerr << "[xvisio] discover_devices: std::bad_alloc - " << e.what()
+              << std::endl;
+    std::cerr << "[xvisio] This usually indicates memory pressure or XVSDK "
+                 "internal error."
+              << std::endl;
+    // Return empty list on allocation failure
+  } catch (const std::exception &e) {
+    std::cerr << "[xvisio] discover_devices: exception - " << e.what()
+              << std::endl;
+  } catch (...) {
+    std::cerr << "[xvisio] discover_devices: unknown exception" << std::endl;
   }
 
   return devices;
@@ -454,49 +504,71 @@ std::vector<DeviceInfo> discover_devices(double timeout_s,
 std::shared_ptr<Device> open_device(const std::string &serial_number,
                                     double timeout_s,
                                     xv::DeviceSupport device_support) {
-  // Set log level to err to suppress info/warn messages (including stereo frame
-  // warnings) Users can still see errors and critical messages
-  xv::setLogLevel(xv::LogLevel::err);
-  std::map<std::string, std::shared_ptr<xv::Device>> device_map;
+  try {
+    // Set log level to err to suppress info/warn messages (including stereo
+    // frame warnings) Users can still see errors and critical messages
+    xv::setLogLevel(xv::LogLevel::err);
+    std::map<std::string, std::shared_ptr<xv::Device>> device_map;
 
-  // Try to read config file if it exists
-  std::string json = "";
-  std::string jsonPath = "/etc/xvisio/config.json";
-  std::ifstream ifs(jsonPath);
-  if (ifs.is_open()) {
-    std::stringstream fbuf;
-    fbuf << ifs.rdbuf();
-    json = fbuf.str();
-    ifs.close();
-  }
+    // Try to read config file if it exists
+    std::string json = "";
+    std::string jsonPath = "/etc/xvisio/config.json";
+    std::ifstream ifs(jsonPath);
+    if (ifs.is_open()) {
+      std::stringstream fbuf;
+      fbuf << ifs.rdbuf();
+      json = fbuf.str();
+      ifs.close();
+    }
 
-  // For wireless controller, always use getDevices(0.0) -
-  // getDevicesUntilTimeout doesn't work for controller discovery
-  if (device_support == xv::DeviceSupport::ONLY_WIRELESS_CONTROLLER) {
-    device_map = xv::getDevices(0.0, json, nullptr, xv::SlamStartMode::Normal,
-                                device_support);
-  } else if (timeout_s > 0.0) {
-    device_map = xv::getDevicesUntilTimeout(
-        timeout_s, json, xv::SlamStartMode::Normal, device_support);
-  } else {
-    device_map = xv::getDevices(0.0, json, nullptr, xv::SlamStartMode::Normal,
-                                device_support);
-  }
+    std::cerr << "[xvisio] open_device: calling xv::getDevices..." << std::endl;
 
-  if (device_map.empty()) {
+    // For wireless controller, always use getDevices(0.0) -
+    // getDevicesUntilTimeout doesn't work for controller discovery
+    if (device_support == xv::DeviceSupport::ONLY_WIRELESS_CONTROLLER) {
+      device_map = xv::getDevices(0.0, json, nullptr, xv::SlamStartMode::Normal,
+                                  device_support);
+    } else if (timeout_s > 0.0) {
+      device_map = xv::getDevicesUntilTimeout(
+          timeout_s, json, xv::SlamStartMode::Normal, device_support);
+    } else {
+      device_map = xv::getDevices(0.0, json, nullptr, xv::SlamStartMode::Normal,
+                                  device_support);
+    }
+
+    std::cerr << "[xvisio] open_device: found " << device_map.size()
+              << " device(s)" << std::endl;
+
+    if (device_map.empty()) {
+      return nullptr;
+    }
+
+    // If serial_number is empty, use first device
+    std::string sn =
+        serial_number.empty() ? device_map.begin()->first : serial_number;
+
+    auto it = device_map.find(sn);
+    if (it == device_map.end()) {
+      return nullptr;
+    }
+
+    std::cerr << "[xvisio] open_device: creating Device wrapper for " << sn
+              << std::endl;
+    return std::make_shared<Device>(it->second, sn);
+  } catch (const std::bad_alloc &e) {
+    std::cerr << "[xvisio] open_device: std::bad_alloc - " << e.what()
+              << std::endl;
+    std::cerr << "[xvisio] This usually indicates memory pressure or XVSDK "
+                 "internal error."
+              << std::endl;
+    return nullptr;
+  } catch (const std::exception &e) {
+    std::cerr << "[xvisio] open_device: exception - " << e.what() << std::endl;
+    return nullptr;
+  } catch (...) {
+    std::cerr << "[xvisio] open_device: unknown exception" << std::endl;
     return nullptr;
   }
-
-  // If serial_number is empty, use first device
-  std::string sn =
-      serial_number.empty() ? device_map.begin()->first : serial_number;
-
-  auto it = device_map.find(sn);
-  if (it == device_map.end()) {
-    return nullptr;
-  }
-
-  return std::make_shared<Device>(it->second, sn);
 }
 
 } // namespace xvisio_core
