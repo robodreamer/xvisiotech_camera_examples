@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "xvisio"
 version = "0.1.0"
 description = "ROS-free Python SDK for Xvisio XR-50 devices"
@@ -24,7 +24,7 @@ pip = ">=25.1,<26"
 [pypi-dependencies]
 numpy = ">=1.26.0"
 spatialmath-python = ">=1.1.0"
-viser = ">=0.1.0"
+viser = ">=1.0.0"
 # Publishing tools
 build = ">=1.0.0"
 twine = ">=5.0.0"

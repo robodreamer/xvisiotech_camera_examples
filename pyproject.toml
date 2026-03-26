@@ -27,8 +27,8 @@ classifiers = [
 keywords = ["robotics", "slam", "imu", "tracking", "xvisio"]
 
 [project.optional-dependencies]
-visualization = ["viser>=0.1.0"]
-examples = ["viser>=0.1.0"]
+visualization = ["viser>=1.0.0"]
+examples = ["viser>=1.0.0"]
 
 [project.scripts]
 xvisio-setup = "xvisio.cli:setup_host"
