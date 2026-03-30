@@ -31,6 +31,7 @@ def _install_mock_backend(monkeypatch):
         def __init__(self):
             self._slam = False
             self._imu = False
+            self._controller = False
 
         def serial_number(self):
             return "MOCK123"
@@ -57,6 +58,17 @@ def _install_mock_backend(monkeypatch):
         def imu_running(self):
             return self._imu
 
+        def start_controller(self, _port):
+            self._controller = True
+            return True
+
+        def stop_controller(self):
+            self._controller = False
+            return True
+
+        def controller_running(self):
+            return self._controller
+
         def get_pose(self, prediction_s=0.0):
             assert isinstance(prediction_s, float)
             return PoseObj()
@@ -69,8 +81,8 @@ def _install_mock_backend(monkeypatch):
             return ImuObj()
 
     mock = types.SimpleNamespace(
-        discover_devices=lambda: [DevInfo("MOCK123", "XR-50")],
-        open_device=lambda sn="": NativeDevice(),
+        discover_devices=lambda timeout_s=2.0, controller_only=False: [DevInfo("MOCK123", "XR-50")],
+        open_device=lambda sn="", timeout_s=2.0, controller_only=False: NativeDevice(),
     )
 
     monkeypatch.setattr(hl, "_load_native", lambda: mock)

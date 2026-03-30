@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Python SDK (pip package: `xvisio`)
 
+### [0.4.0] - 2026-03-30
+
+Improved controller reference-reset behavior to support side-specific resets without cross-arm coupling.
+
+#### Added
+- `Device.reset_controller_reference(side="both") -> bool` with side-aware reset options:
+  - `side="left"` resets only left controller reference
+  - `side="right"` resets only right controller reference
+  - `side="both"` preserves previous no-arg/global behavior
+- `Device.supports_individual_reference_reset() -> bool` capability probe for native side-specific reset support.
+- Regression tests for side-specific controller reference behavior in `test/test_controller_reference_reset.py`.
+- Dual-controller visualization/staleness handling in `demo_pose_visualization.py` with per-side stream status and frame visibility control.
+- New controller demo parameters in `demo_pose_transforms.py`:
+  - `--controller-duration`
+  - `--controller-rate`
+- Controller sample summary output for left/right packet reception in transforms demo.
+- Repository agent harness docs:
+  - `AGENTS.md`
+  - `.cursor/skills/xvisio-release-workflow/SKILL.md`
+
+#### Changed
+- Controller relative reference state is now tracked per side (`left`/`right`) in the high-level Python wrapper.
+- First-frame auto-initialization in `controller_relative()` now initializes each side independently.
+- Software fallback now supports per-side reference reset even when native SDK side-reset APIs are unavailable.
+- Installation docs now explicitly require XVSDK host setup before source-built pip installs (`README.md`, `PIP_INSTALL.md`).
+
+#### Fixed
+- Removed cross-arm coupling from shared controller reset/reference state.
+- Resetting one controller side no longer disturbs the other side's relative pose reference.
+- Improved controller start error diagnostics in native device wrapper (`cpp_core/src/device.cpp`).
+
+---
+
 ### [0.3.0] - 2026-01-30
 
 Added support for Seer wireless controller.

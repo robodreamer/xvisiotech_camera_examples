@@ -1,7 +1,7 @@
 """High-level Python API for Xvisio devices."""
 
 import time
-from typing import Optional, Iterator, Tuple
+from typing import Optional, Iterator, Tuple, Literal
 import numpy as np
 from spatialmath.base import q2r, r2q
 from .types import Pose, ImuSample, DeviceInfo, ControllerData
@@ -105,10 +105,10 @@ class Device:
         self._pos_init = None
         self._quat_init = None
         self._initialized = False
-        # Controller-specific relative pose state
-        self._controller_pos_init = None
-        self._controller_R_init = None
-        self._controller_initialized = False
+        # Controller-specific relative pose state (tracked per side)
+        self._controller_pos_init = {"left": None, "right": None}
+        self._controller_R_init = {"left": None, "right": None}
+        self._controller_initialized = {"left": False, "right": False}
 
     def __enter__(self):
         """Context manager entry."""
@@ -296,29 +296,69 @@ class Device:
         right_aligned = _apply_offset(right) if right is not None else None
         return (left_aligned, right_aligned)
 
-    def reset_controller_reference(self) -> None:
-        """Reset the reference pose for relative controller pose calculations.
+    def supports_individual_reference_reset(self) -> bool:
+        """Return True if native side-specific controller reset is available."""
+        probe = getattr(self._impl, "supports_individual_reference_reset", None)
+        if callable(probe):
+            try:
+                return bool(probe())
+            except Exception:
+                return False
+        if isinstance(probe, bool):
+            return probe
+        return hasattr(self._impl, "reset_controller_reference_side")
+
+    def _set_controller_reference(self, side: Literal["left", "right"], c: ControllerData) -> None:
+        """Store RAW controller pose as side-specific relative reference."""
+        self._controller_pos_init[side] = np.array(c.position, dtype=np.float64)
+        quat_wxyz = np.array(c.quat_wxyz, dtype=np.float64)
+        quat_xyzw = np.array(
+            [quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]], dtype=np.float64
+        )
+        self._controller_R_init[side] = q2r(quat_xyzw, order="xyzs")
+        self._controller_initialized[side] = True
+
+    def reset_controller_reference(
+        self, side: Literal["left", "right", "both"] = "both"
+    ) -> bool:
+        """Reset reference pose(s) for relative controller pose calculations.
 
         Call this when you want to start tracking controller position relative
         to the current position. Similar to reset_pose_reference() for camera.
 
         Stores the RAW (not world-aligned) pose as reference, matching the
         ROS2 teleop handler behavior.
+
+        Args:
+            side: Which controller reference to reset: "left", "right", or "both".
+                  Default is "both" (backward-compatible no-arg behavior).
+
+        Returns:
+            True if all requested sides were reset. False if any requested side
+            was unavailable at reset time.
         """
-        # Use raw controller data (not world-aligned) - same as ROS2 handler
+        if side not in {"left", "right", "both"}:
+            raise ValueError(f"Invalid side='{side}'. Expected 'left', 'right', or 'both'.")
+
+        # If future native side-specific reset is available, use it directly.
+        if side != "both" and self.supports_individual_reference_reset():
+            native_side_reset = getattr(self._impl, "reset_controller_reference_side", None)
+            if callable(native_side_reset):
+                return bool(native_side_reset(side))
+
+        # Software fallback: maintain independent per-side references in Python.
         left, right = self.controller()
-        # Use whichever controller is available (prefer right)
-        c = right if right is not None else left
-        if c is not None:
-            self._controller_pos_init = np.array(c.position, dtype=np.float64)
-            quat_wxyz = np.array(c.quat_wxyz, dtype=np.float64)
-            quat_xyzw = np.array(
-                [quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]], dtype=np.float64
-            )
-            self._controller_R_init = q2r(quat_xyzw, order="xyzs")
-            self._controller_initialized = True
-        else:
-            self._controller_initialized = False
+        by_side = {"left": left, "right": right}
+        requested_sides = ("left", "right") if side == "both" else (side,)
+
+        success = True
+        for requested_side in requested_sides:
+            c = by_side[requested_side]
+            if c is None:
+                success = False
+                continue
+            self._set_controller_reference(requested_side, c)
+        return success
 
     def controller_relative(
         self,
@@ -339,15 +379,20 @@ class Device:
         # Use raw controller data (not world-aligned) - same as ROS2 handler
         left, right = self.controller()
 
-        # Auto-initialize if not done yet
-        if not self._controller_initialized:
-            self.reset_controller_reference()
-            # After initialization, positions are at origin
-            if self._controller_initialized:
-                return self._make_zero_controller(left, right)
-            return (left, right)
+        # Auto-initialize each side independently on first observation.
+        newly_initialized = set()
+        if left is not None and not self._controller_initialized["left"]:
+            self._set_controller_reference("left", left)
+            newly_initialized.add("left")
+        if right is not None and not self._controller_initialized["right"]:
+            self._set_controller_reference("right", right)
+            newly_initialized.add("right")
 
         def _apply_relative(c: ControllerData) -> ControllerData:
+            side = c.type
+            if not self._controller_initialized[side]:
+                return c
+
             pos = np.array(c.position, dtype=np.float64)
             quat_wxyz = np.array(c.quat_wxyz, dtype=np.float64)
             quat_xyzw = np.array(
@@ -361,8 +406,8 @@ class Device:
             pos_rel, R_rel = self._compute_relative_transform(
                 pos=pos,
                 R=R,
-                pos_init=self._controller_pos_init,
-                R_init=self._controller_R_init,
+                pos_init=self._controller_pos_init[side],
+                R_init=self._controller_R_init[side],
                 R_offset=self._R_offset_controller,
                 negate_position=True,
             )
@@ -388,9 +433,31 @@ class Device:
                 key=c.key,
             )
 
-        left_rel = _apply_relative(left) if left is not None else None
-        right_rel = _apply_relative(right) if right is not None else None
+        left_rel = (
+            self._zero_controller(left)
+            if left is not None and "left" in newly_initialized
+            else (_apply_relative(left) if left is not None else None)
+        )
+        right_rel = (
+            self._zero_controller(right)
+            if right is not None and "right" in newly_initialized
+            else (_apply_relative(right) if right is not None else None)
+        )
         return (left_rel, right_rel)
+
+    def _zero_controller(self, c: ControllerData) -> ControllerData:
+        """Create controller data at origin with identity rotation."""
+        return ControllerData(
+            type=c.type,
+            position=(0.0, 0.0, 0.0),
+            quat_wxyz=(1.0, 0.0, 0.0, 0.0),
+            host_timestamp_s=c.host_timestamp_s,
+            key_trigger=c.key_trigger,
+            key_side=c.key_side,
+            rocker_x=c.rocker_x,
+            rocker_y=c.rocker_y,
+            key=c.key,
+        )
 
     def _make_zero_controller(
         self, left: Optional[ControllerData], right: Optional[ControllerData]
@@ -398,17 +465,7 @@ class Device:
         """Create controller data at origin (for first frame after reset)."""
 
         def _zero(c: ControllerData) -> ControllerData:
-            return ControllerData(
-                type=c.type,
-                position=(0.0, 0.0, 0.0),
-                quat_wxyz=(1.0, 0.0, 0.0, 0.0),
-                host_timestamp_s=c.host_timestamp_s,
-                key_trigger=c.key_trigger,
-                key_side=c.key_side,
-                rocker_x=c.rocker_x,
-                rocker_y=c.rocker_y,
-                key=c.key,
-            )
+            return self._zero_controller(c)
 
         return (
             _zero(left) if left is not None else None,
