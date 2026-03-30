@@ -39,7 +39,9 @@ Apply this skill when the user asks for:
    - `git push`
 7. Publish to PyPI (unless user explicitly says "push only" or "do not publish"):
    - `pixi run build-dist`
+     - This task clears old `dist/` artifacts before building.
    - `pixi run upload-pypi`
+     - Upload scripts publish only `dist/xvisio-<current-version>.tar.gz`.
    - Verify uploaded version:
      - `curl -sSf https://pypi.org/pypi/xvisio/json | python -c "import json,sys; print(json.load(sys.stdin)['info']['version'])"`
      - Confirm it matches `pyproject.toml`.

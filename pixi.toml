@@ -39,7 +39,7 @@ host-setup = "sudo ./scripts/setup_host.sh"
 # Build distributions
 build-wheel = "python -m build --wheel"
 build-sdist = "python -m build --sdist"
-build-dist = "python -m build"
+build-dist = "rm -rf dist && python -m build"
 # Setup PyPI credentials (run once to create ~/.pypirc)
 setup-pypirc = "bash scripts/setup_pypirc.sh"
 # Upload to PyPI (requires credentials configured in ~/.pypirc)
