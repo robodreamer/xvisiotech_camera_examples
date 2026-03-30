@@ -1,5 +1,6 @@
 [build-system]
-requires = ["scikit-build-core", "nanobind"]
+# Ensure packaging new enough for scikit-build-core metadata (Ubuntu may otherwise resolve 21.x).
+requires = ["scikit-build-core", "nanobind", "packaging>=23.2"]
 build-backend = "scikit_build_core.build"
 
 [project]

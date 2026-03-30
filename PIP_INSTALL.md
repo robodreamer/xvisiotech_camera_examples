@@ -4,19 +4,20 @@ The `xvisio` package can be installed via `pip` from PyPI or from source checkou
 
 ## Quick Installation (pip install)
 
+Building the package requires **XVSDK** on the system (`/usr/lib/libxvsdk.so` and `/usr/include/xvsdk`). Run host setup **before** `pip install` when pip builds from source (no compatible wheel).
+
 ```bash
-# Install from PyPI
+git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+cd xvisiotech_camera_examples
+sudo ./scripts/setup_host.sh
+
 pip install xvisio
+# pip install xvisio[examples]   # optional: viser examples
 
-# Install with visualization examples (includes viser)
-pip install xvisio[examples]
-
-# Run system setup (one-time, requires sudo)
-sudo xvisio-setup
-
-# Test installation
 python3 -c "import xvisio; print(xvisio.discover())"
 ```
+
+See [Installation from Source Checkout](#installation-from-source-checkout) below if you are installing from a local clone with `pip install -e .`.
 
 View the package at [pypi.org/project/xvisio/](https://pypi.org/project/xvisio/).
 

@@ -18,19 +18,32 @@ This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobin
 
 ### Quick start (pip install)
 
+The native extension links against **XVSDK** at `/usr/lib/libxvsdk.so`. If `pip` builds from the **source distribution** (no matching wheel), that library must exist **before** `pip install`, or CMake fails during the wheel build.
+
+**1. One-time host setup** (installs udev rules, SuiteSparse, and the XVSDK `.deb` from `ubuntu-drivers/`):
+
 ```bash
-# Install from PyPI
+git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+cd xvisiotech_camera_examples
+sudo ./scripts/setup_host.sh
+```
+
+**2. Install the Python package**
+
+```bash
 pip install xvisio
 
-# Install with visualization examples (includes viser)
+# Optional: visualization examples (includes viser)
 pip install xvisio[examples]
+```
 
-# Run system setup (one-time, requires sudo)
-sudo xvisio-setup
+**3. Test**
 
-# Test installation
+```bash
 python3 -c "import xvisio; print(xvisio.discover())"
 ```
+
+`sudo xvisio-setup` is a convenience wrapper that runs the same `setup_host.sh` when you have a source checkout or editable install; it does not bundle the driver `.deb` on its own.
 
 View the package at [pypi.org/project/xvisio/](https://pypi.org/project/xvisio/).
 

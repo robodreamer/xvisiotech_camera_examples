@@ -36,6 +36,9 @@ class XvisioPoseVisualizer:
         trajectory_length: int = 500,
         on_reset_pose: Optional[Callable[[], None]] = None,
         controller_only_mode: bool = False,
+        controller_stale_timeout_s: float = 0.5,
+        controller_axes_length: float = 0.12,
+        controller_axes_radius: float = 0.006,
     ):
         """Initialize the visualizer.
 
@@ -52,6 +55,9 @@ class XvisioPoseVisualizer:
         self._on_reset_pose = on_reset_pose
         self._show_imu_checkbox = None
         self._controller_only_mode = controller_only_mode
+        self._controller_stale_timeout_s = max(0.05, float(controller_stale_timeout_s))
+        self._controller_axes_length = max(0.02, float(controller_axes_length))
+        self._controller_axes_radius = max(0.001, float(controller_axes_radius))
 
         # Trajectory storage (position history)
         self.trajectory = deque(maxlen=trajectory_length)
@@ -62,8 +68,12 @@ class XvisioPoseVisualizer:
         self.imu_vector: Optional[Any] = None
         self.controller_left_frame: Optional[Any] = None
         self.controller_right_frame: Optional[Any] = None
+        self._controller_last_host_ts = {"left": None, "right": None}
+        self._controller_last_fresh_wall_ts = {"left": 0.0, "right": 0.0}
+        self._controller_last_pose_vec = {"left": None, "right": None}
         self._show_controller_checkbox = None
         self._controller_port_input: Optional[Any] = None
+        self._controller_status_markdown: Optional[Any] = None
 
         # Add grid for reference
         self.scene.add_grid(
@@ -130,6 +140,12 @@ class XvisioPoseVisualizer:
                 "- **Clear Trajectory**: Remove path history\n"
                 "- **Show IMU Vector**: Display IMU acceleration vector\n"
                 "- **Show Controller**: Display Seer controller frames"
+            )
+            self.gui.add_markdown("---")
+            self._controller_status_markdown = self.gui.add_markdown(
+                "**Controller Stream Status**\n"
+                "- L: waiting for data\n"
+                "- R: waiting for data"
             )
 
     def update_pose(self, pose: xvisio.Pose):
@@ -246,40 +262,94 @@ class XvisioPoseVisualizer:
             return "/dev/ttyUSB0"
         return str(self._controller_port_input.value).strip() or "/dev/ttyUSB0"
 
+    def _remove_controller_frame(self, frame_attr: str):
+        frame = getattr(self, frame_attr, None)
+        if frame is not None:
+            frame.remove()
+            setattr(self, frame_attr, None)
+
+    def _set_controller_status(self, left_status: str, right_status: str):
+        if self._controller_status_markdown is None:
+            return
+        self._controller_status_markdown.content = (
+            "**Controller Stream Status**\n"
+            f"- L: {left_status}\n"
+            f"- R: {right_status}\n"
+            f"- stale timeout: {self._controller_stale_timeout_s:.2f}s"
+        )
+
     def update_controller(self, left: Optional[xvisio.ControllerData], right: Optional[xvisio.ControllerData]):
         """Update controller frame visualization (left=blue, right=green)."""
         if not self.is_controller_enabled():
             self.clear_controller()
+            self._set_controller_status("hidden (controller view disabled)", "hidden (controller view disabled)")
             return
+        now = time.monotonic()
+        status_by_side = {"left": "waiting for data", "right": "waiting for data"}
         for data, path, color, frame_attr in [
-            (left, "/controller/left", (0.2, 0.4, 1.0), "controller_left_frame"),
-            (right, "/controller/right", (0.2, 0.9, 0.3), "controller_right_frame"),
+            # Distinct, color-blind-friendly palette while keeping identical frame size.
+            (left, "/controller/left", (66, 133, 244), "controller_left_frame"),   # blue
+            (right, "/controller/right", (244, 180, 0), "controller_right_frame"),  # amber
         ]:
+            side = "left" if "left" in path else "right"
             if data is None:
+                self._remove_controller_frame(frame_attr)
+                self._controller_last_host_ts[side] = None
+                self._controller_last_fresh_wall_ts[side] = 0.0
+                self._controller_last_pose_vec[side] = None
+                status_by_side[side] = "no data"
                 continue
+            host_ts = float(data.host_timestamp_s)
+            last_host_ts = self._controller_last_host_ts[side]
             pos = np.array(data.position, dtype=np.float64)
             quat = np.array(data.quat_wxyz, dtype=np.float64)
+            pose_vec = np.concatenate((pos, quat), axis=0)
+            last_pose_vec = self._controller_last_pose_vec[side]
+            pose_changed = (
+                last_pose_vec is None
+                or np.linalg.norm(pose_vec - last_pose_vec) > 1e-5
+            )
+            # Some SDK/controller paths may produce coarse or repeated host timestamps.
+            # Consider a sample fresh if timestamp advances OR pose actually changes.
+            is_fresh = ((last_host_ts is None) or (host_ts > last_host_ts + 1e-9)) or pose_changed
+            if is_fresh:
+                self._controller_last_host_ts[side] = host_ts
+                self._controller_last_fresh_wall_ts[side] = now
+                self._controller_last_pose_vec[side] = pose_vec.copy()
+                status_by_side[side] = f"fresh, age=0.00s, ts={host_ts:.3f}"
+            else:
+                age = now - self._controller_last_fresh_wall_ts[side]
+                if age > self._controller_stale_timeout_s:
+                    self._remove_controller_frame(frame_attr)
+                    status_by_side[side] = f"stale (hidden), age={age:.2f}s, ts={host_ts:.3f}"
+                else:
+                    status_by_side[side] = f"stale, age={age:.2f}s, ts={host_ts:.3f}"
+                continue
             frame = getattr(self, frame_attr)
             if frame is None:
                 frame = self.scene.add_frame(
                     path,
                     wxyz=tuple(quat),
                     position=tuple(pos),
-                    axes_length=0.08,
-                    axes_radius=0.004,
+                    axes_length=self._controller_axes_length,
+                    axes_radius=self._controller_axes_radius,
+                    origin_radius=self._controller_axes_radius * 2.8,
+                    origin_color=color,
                 )
                 setattr(self, frame_attr, frame)
             else:
                 frame.wxyz = tuple(quat)
                 frame.position = tuple(pos)
+        self._set_controller_status(status_by_side["left"], status_by_side["right"])
 
     def clear_controller(self):
         """Remove controller frames from the scene."""
         for attr in ("controller_left_frame", "controller_right_frame"):
-            frame = getattr(self, attr, None)
-            if frame is not None:
-                frame.remove()
-                setattr(self, attr, None)
+            self._remove_controller_frame(attr)
+        self._controller_last_host_ts = {"left": None, "right": None}
+        self._controller_last_fresh_wall_ts = {"left": 0.0, "right": 0.0}
+        self._controller_last_pose_vec = {"left": None, "right": None}
+        self._set_controller_status("waiting for data", "waiting for data")
 
     def reset_trajectory(self):
         """Clear the trajectory history."""
@@ -295,6 +365,24 @@ def main():
     parser.add_argument("-p", "--port", type=int, default=8080, help="Viser server port (default: 8080)")
     parser.add_argument("-r", "--rate", type=float, default=100.0, help="Update rate in Hz (default: 100)")
     parser.add_argument("--controller-port", type=str, default="/dev/ttyUSB0", help="Controller serial port (default: /dev/ttyUSB0)")
+    parser.add_argument(
+        "--controller-stale-timeout",
+        type=float,
+        default=0.5,
+        help="Hide controller frame if host timestamp is not updated for this many seconds (default: 0.5)",
+    )
+    parser.add_argument(
+        "--controller-frame-size",
+        type=float,
+        default=0.12,
+        help="Controller frame axes length in meters (default: 0.12)",
+    )
+    parser.add_argument(
+        "--controller-frame-radius",
+        type=float,
+        default=0.006,
+        help="Controller frame axes radius in meters (default: 0.006)",
+    )
     args = parser.parse_args()
 
     # Calculate sleep time from rate
@@ -349,6 +437,9 @@ def main():
                 port=args.port,
                 on_reset_pose=on_reset_controller,
                 controller_only_mode=True,
+                controller_stale_timeout_s=args.controller_stale_timeout,
+                controller_axes_length=args.controller_frame_size,
+                controller_axes_radius=args.controller_frame_radius,
             )
 
             print("\nVisualization is running (controller mode)!")
@@ -361,31 +452,14 @@ def main():
                 while True:
                     # Use relative controller pose (world-aligned with offset from reference)
                     left, right = dev.controller_relative()
-
-                    # Use first available pose for single "pose" trajectory
-                    if left is not None:
-                        from types import SimpleNamespace
-                        pose_like = SimpleNamespace(
-                            position=left.position,
-                            quat_wxyz=left.quat_wxyz,
-                            confidence=1.0,
-                        )
-                        viz.update_pose(pose_like)
-                    if right is not None and left is None:
-                        from types import SimpleNamespace
-                        pose_like = SimpleNamespace(
-                            position=right.position,
-                            quat_wxyz=right.quat_wxyz,
-                            confidence=1.0,
-                        )
-                        viz.update_pose(pose_like)
                     viz.update_controller(left, right)
                     frame_count += 1
                     if (left or right) and frame_count % max(1, int(args.rate)) == 0:
                         for name, c in [("L", left), ("R", right)]:
                             if c is not None:
                                 print(f"  {name}: pos=({c.position[0]:+.3f},{c.position[1]:+.3f},{c.position[2]:+.3f}) "
-                                      f"trigger={c.key_trigger} side={c.key_side} rocker=({c.rocker_x},{c.rocker_y}) key={c.key}")
+                                      f"ts={c.host_timestamp_s:.3f} trigger={c.key_trigger} "
+                                      f"side={c.key_side} rocker=({c.rocker_x},{c.rocker_y}) key={c.key}")
                     time.sleep(sleep_time)
             except KeyboardInterrupt:
                 print("\n\nStopped by user")
@@ -414,6 +488,9 @@ def main():
             viz = XvisioPoseVisualizer(
                 port=args.port,
                 on_reset_pose=lambda: (dev.reset_pose_reference(), viz.reset_trajectory()),
+                controller_stale_timeout_s=args.controller_stale_timeout,
+                controller_axes_length=args.controller_frame_size,
+                controller_axes_radius=args.controller_frame_radius,
             )
 
             # Optional: open controller if available (for "Show Controller" checkbox)
