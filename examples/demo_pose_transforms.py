@@ -20,6 +20,18 @@ def main():
         default="/dev/ttyUSB0",
         help="Controller serial port (default: /dev/ttyUSB0)",
     )
+    parser.add_argument(
+        "--controller-duration",
+        type=float,
+        default=10.0,
+        help="How long to print controller samples in controller-only mode (seconds, default: 10.0)",
+    )
+    parser.add_argument(
+        "--controller-rate",
+        type=float,
+        default=5.0,
+        help="Controller print rate in controller-only mode (Hz, default: 5.0)",
+    )
     args = parser.parse_args()
 
     print("=== Xvisio Pose Transforms Demo ===\n")
@@ -48,19 +60,36 @@ def main():
     if not devices and controller_devices:
         dev = xvisio.open_controller(port=args.controller_port)
         print("Opened controller device\n")
-        print("Controller pose samples (5 iterations):")
+        print(f"Controller pose samples ({args.controller_duration:.1f}s at {args.controller_rate:.1f} Hz):")
         print(f"{'Side':<6} {'Position (x,y,z)':<30} {'Quat (w,x,y,z)':<35} {'Buttons':<30}")
         print("-" * 110)
-        for i in range(5):
+        sleep_s = 1.0 / args.controller_rate if args.controller_rate > 0 else 0.2
+        end_time = time.time() + max(0.5, args.controller_duration)
+        sample_idx = 0
+        left_seen = 0
+        right_seen = 0
+        while time.time() < end_time:
             left, right = dev.controller()
+            sample_idx += 1
+            print(f"[sample {sample_idx:03d}]")
             for name, c in [("Left", left), ("Right", right)]:
                 if c is None:
                     continue
+                if name == "Left":
+                    left_seen += 1
+                else:
+                    right_seen += 1
                 pos_str = f"({c.position[0]:.3f},{c.position[1]:.3f},{c.position[2]:.3f})"
                 quat_str = f"({c.quat_wxyz[0]:.3f},{c.quat_wxyz[1]:.3f},{c.quat_wxyz[2]:.3f},{c.quat_wxyz[3]:.3f})"
                 btn_str = f"trig={c.key_trigger} side={c.key_side} key={c.key} rocker=({c.rocker_x},{c.rocker_y})"
                 print(f"{name:<6} {pos_str:<30} {quat_str:<35} {btn_str:<30}")
-            time.sleep(0.2)
+            time.sleep(sleep_s)
+        left_pct = 100.0 * left_seen / sample_idx if sample_idx > 0 else 0.0
+        right_pct = 100.0 * right_seen / sample_idx if sample_idx > 0 else 0.0
+        print("\nController packet summary:")
+        print(f"  Samples polled: {sample_idx}")
+        print(f"  Left packets:   {left_seen} ({left_pct:.1f}% of polls)")
+        print(f"  Right packets:  {right_seen} ({right_pct:.1f}% of polls)")
         print("\n✓ Controller demo complete")
         dev.close()
         return
