@@ -1,5 +1,0 @@
-# request
-builtin_interfaces/Duration prediction
----
-# response
-geometry_msgs/PoseStamped pose

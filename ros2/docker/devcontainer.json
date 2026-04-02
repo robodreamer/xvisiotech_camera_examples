@@ -1,0 +1,52 @@
+// .devcontainer/devcontainer.json
+
+{
+    "name": "Xvisio Camera Dev Container",
+
+    "context": "..", // The path to the folder containing the Dockerfile
+
+    "dockerFile": "Dockerfile",
+
+    // Add the USB device pass-through arguments
+    // Using privileged: true is the easiest approach for camera access
+    // but you can also be more restrictive if needed.
+    "runArgs": [
+        "--privileged",
+        // If you want to explicitly mount /dev/bus/usb, do:
+        // "--device=/dev/bus/usb"
+        // (Optional) forward all GPU devices if you'd like to accelerate CV
+        // "--gpus=all"
+    ],
+
+    // Forward common ROS2 ports or others if you need them
+    "forwardPorts": [
+        11311,
+        11345
+    ],
+
+    // Mount your local workspace to /workspaces/ in the container
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/xvisio-cam,type=bind,consistency=cached",
+    "workspaceFolder": "/workspaces/xvisio-cam",
+
+    "customizations": {
+        "vscode": {
+            "settings": {
+                // VSCode can customize in-container settings here
+                "terminal.integrated.defaultProfile.linux": "bash"
+            }
+        }
+    },
+
+    "postCreateCommand": "bash -c ' \
+        source /opt/ros/humble/setup.bash && \
+        cd ~/ros2_ws && \
+        colcon build --symlink-install \
+            --cmake-args \
+            -DXVSDK_INCLUDE_DIRS=/usr/include/xvsdk \
+            -DXVSDK_LIBRARIES=/usr/lib/libxvsdk.so && \
+        source ~/ros2_ws/install/setup.bash \
+    '",
+
+    // You can override the default shell; recommended for ROS2 usage
+    "remoteUser": "ros"
+}

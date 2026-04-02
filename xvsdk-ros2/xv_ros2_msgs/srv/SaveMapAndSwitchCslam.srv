@@ -1,7 +1,0 @@
-# request
-string filename
----
-# response
-bool success
-string message
-

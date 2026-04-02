@@ -1,0 +1,7 @@
+# request
+string portaddress
+---
+# response
+bool success
+string message
+

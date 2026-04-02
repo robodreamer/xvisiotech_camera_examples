@@ -1,0 +1,141 @@
+[build-system]
+# Ensure packaging new enough for scikit-build-core metadata (Ubuntu may otherwise resolve 21.x).
+requires = ["scikit-build-core", "nanobind", "packaging>=23.2"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "xvisio"
+version = "0.4.0"
+description = "ROS-free Python SDK for Xvisio XR-50 and Seer controller devices"
+authors = [{ name = "Andy Park", email = "andypark.purdue@gmail.com" }]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26.0", "spatialmath-python>=1.1.0"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: C++",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = ["robotics", "slam", "imu", "tracking", "xvisio"]
+
+[project.optional-dependencies]
+visualization = ["viser>=1.0.0"]
+examples = ["viser>=1.0.0"]
+
+[project.scripts]
+xvisio-setup = "xvisio.cli:setup_host"
+xvisio-examples = "xvisio.cli:examples_cmd"
+
+[project.urls]
+Homepage = "https://github.com/xvisiotech/xvisio-python"
+Repository = "https://github.com/xvisiotech/xvisio-python"
+"Bug Reports" = "https://github.com/xvisiotech/xvisio-python/issues"
+
+# ── scikit-build-core (C++ extension build) ───────────────────────────────────
+
+[tool.scikit-build]
+cmake.source-dir = "."
+build-dir = "build"
+wheel.install-dir = "xvisio"
+wheel.packages = ["python/xvisio"]
+ninja.make-fallback = false
+editable.mode = "inplace"
+
+[tool.scikit-build.cmake.define]
+CMAKE_BUILD_TYPE = "Release"
+BUILD_PYTHON_BINDINGS = "ON"
+BUILD_TESTS = "OFF"
+BUILD_EXAMPLES = "OFF"
+
+# ── Pixi dev environment ──────────────────────────────────────────────────────
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64"]
+
+[tool.pixi.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:/usr/lib"
+PKG_CONFIG_PATH = "$CONDA_PREFIX/lib/pkgconfig"
+
+[tool.pixi.dependencies]
+# Build tools
+cmake = ">=3.16,<4"
+ninja = ">=1.12,<2"
+# Python + build deps (runtime deps come from [project].dependencies)
+python = ">=3.10,<3.13"
+nanobind = ">=2.8.0,<3"
+scikit-build-core = ">=0.11.5,<0.12"
+pip = ">=25.1,<26"
+
+[tool.pixi.pypi-dependencies]
+# viser is optional for the package but needed in the dev env for examples
+viser = ">=1.0.0"
+# Publishing tools
+build = ">=1.0.0"
+twine = ">=5.0.0"
+
+[tool.pixi.tasks]
+install         = "pip install -e . --no-build-isolation"
+install-rebuild = "pip install -C editable.rebuild=true -e . --no-build-isolation"
+build           = "pip install --no-build-isolation ."
+host-setup      = "sudo ./scripts/setup_host.sh"
+build-wheel     = "python -m build --wheel"
+build-sdist     = "python -m build --sdist"
+build-dist      = "rm -rf dist && python -m build"
+setup-pypirc    = "bash scripts/setup_pypirc.sh"
+upload-testpypi = "bash scripts/upload_testpypi.sh"
+upload-pypi     = "bash scripts/upload_pypi.sh"
+version         = "python scripts/version.py"
+demo_pose_imu           = "python examples/demo_pose_imu.py"
+demo_pose_visualization = "python examples/demo_pose_visualization.py"
+benchmark_pose_rate     = "python examples/benchmark_pose_rate.py"
+
+# ── Dev feature (pytest, formatters) ─────────────────────────────────────────
+
+[tool.pixi.feature.dev.dependencies]
+pytest = ">=7.0"
+black  = ">=24.0"
+isort  = ">=5.13.0"
+
+[tool.pixi.feature.dev.tasks]
+test   = "pytest test/"
+lint   = "black --check python/ examples/ && isort --check python/ examples/"
+format = "black python/ examples/ && isort python/ examples/"
+
+# ── Docs feature ─────────────────────────────────────────────────────────────
+
+[tool.pixi.feature.docs.dependencies]
+python = ">=3.10,<3.13"
+
+[tool.pixi.feature.docs.pypi-dependencies]
+mkdocs          = ">=1.5"
+mkdocs-material = ">=9.0"
+mkdocstrings    = { version = ">=0.24", extras = ["python"] }
+
+[tool.pixi.feature.docs.tasks]
+docs-build = { cmd = "mkdocs build", env = { PYTHONPATH = "python" } }
+docs-serve = { cmd = "mkdocs serve", env = { PYTHONPATH = "python" } }
+
+[tool.pixi.environments]
+default = { features = ["dev"] }
+docs    = { features = ["docs"], no-default-feature = true }
+
+# ── Linter / formatter config ─────────────────────────────────────────────────
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 100

@@ -1,5 +1,0 @@
-# request
-builtin_interfaces/Time timestamp
----
-# response
-OrientationStamped orientation
