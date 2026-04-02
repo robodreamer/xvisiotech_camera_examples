@@ -4,6 +4,8 @@
 
 The `xvisio` package provides direct Python access to pose (SLAM), IMU, and controller data from XvisioTech devices — no ROS required. Built on a C++ core via [Nanobind](https://github.com/wjakob/nanobind) for low-overhead, high-rate data streaming.
 
+![Xvisio 3D pose visualization demo](assets/visualization_demo.gif)
+
 ## Supported Devices
 
 | Device | Pose (SLAM) | IMU | Controller |

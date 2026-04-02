@@ -88,3 +88,4 @@ nav:
     - Pose + IMU: examples/pose_imu.md
     - Pose Transforms: examples/pose_transforms.md
     - 3D Visualization: examples/visualization.md
+  - ROS2 Driver: ros2.md
