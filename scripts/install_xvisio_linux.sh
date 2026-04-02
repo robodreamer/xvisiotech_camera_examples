@@ -62,7 +62,7 @@ trap cleanup EXIT
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd 2>/dev/null || echo "")"
 
-if [[ -f "${REPO_ROOT}/scripts/setup_host.sh" && -d "${REPO_ROOT}/ubuntu-drivers" ]]; then
+if [[ -f "${REPO_ROOT}/scripts/setup_host.sh" && -d "${REPO_ROOT}/drivers" ]]; then
   IN_REPO=true
 else
   IN_REPO=false

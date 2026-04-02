@@ -11,7 +11,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 if [ -n "${XVISIO_DRIVERS_DIR}" ]; then
     DRIVERS_DIR="${XVISIO_DRIVERS_DIR}"
 else
-    DRIVERS_DIR="${REPO_ROOT}/ubuntu-drivers"
+    DRIVERS_DIR="${REPO_ROOT}/drivers"
 fi
 
 UDEV_RULES_SRC="${DRIVERS_DIR}/99-xvisio.rules"

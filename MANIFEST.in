@@ -2,7 +2,7 @@
 include README.md
 include LICENSE
 recursive-include scripts *.sh
-recursive-include ubuntu-drivers *.rules *.deb
+recursive-include drivers *.rules *.deb
 recursive-include python/xvisio *.py *.pyi
 recursive-include cpp_core *.cpp *.h CMakeLists.txt
 recursive-include python_bindings *.cpp CMakeLists.txt

@@ -20,7 +20,7 @@ This repo includes a **ROS-free** Python package, `xvisio`, built with **nanobin
 
 The native extension links against **XVSDK** at `/usr/lib/libxvsdk.so`. If `pip` builds from the **source distribution** (no matching wheel), that library must exist **before** `pip install`, or CMake fails during the wheel build.
 
-**1. One-time host setup** (installs udev rules, SuiteSparse, and the XVSDK `.deb` from `ubuntu-drivers/`):
+**1. One-time host setup** (installs udev rules, SuiteSparse, and the XVSDK `.deb` from `drivers/`):
 
 ```bash
 git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
@@ -61,7 +61,7 @@ cd xvisio_examples
 python demo_pose_imu.py
 ```
 
-See [PIP_INSTALL.md](PIP_INSTALL.md) for more details on running examples.
+See the [Installation Guide](docs/installation.md) for more details on running examples.
 
 ### Quick start (source checkout)
 
@@ -131,9 +131,7 @@ pixi run install
 pixi run demo_pose_imu
 ```
 
-See [INSTALL.md](INSTALL.md) for detailed installation instructions.
-
-<!-- TODO: Remove this section when PyPI is published (PyPI instructions moved to top) -->
+See the [Installation Guide](docs/installation.md) for detailed installation instructions.
 
 ### Minimal usage example
 
@@ -289,7 +287,7 @@ Make sure the device is connected to the host machine and the camera is powered 
 Start the Docker container with the necessary dependencies and the camera driver installed:
 
 ```bash
-./scripts/start_container.sh
+./ros2/scripts/start_container.sh
 ```
 
 Once the docker image is built and the container is started, you can proceed with setting up the ROS2 package in the container.
@@ -303,7 +301,7 @@ This command will display the output of the camera in the terminal. If the camer
 
 To set up the ROS2 package for the XvisioTech camera, follow these steps in the container:
 ```bash
-source ./scripts/setup_ros2_driver.sh
+source ./ros2/scripts/setup_ros2_driver.sh
 ```
 Make sure to `source` the script to set up the ROS2 package in the current shell. Just running the script without `source` will not set up the ROS2 package in the current shell.
 
@@ -318,7 +316,7 @@ To verify the installation and setup, you can listen to the camera's pose topic 
 
 Open a new shell in the container currently running the ROS2 node:
 ```bash
-./scripts/open_shell.sh
+./ros2/scripts/open_shell.sh
 ```
 
 You can listen to pose topic in the new shell:
@@ -447,7 +445,7 @@ To set up the ROS2 package for the XvisioTech camera, follow these steps:
 
 ```bash
 mkdir -p ~/ros2_ws/src
-cp xvsdk-ros2 ~/ros2_ws/src/
+cp ros2/xvsdk-ros2 ~/ros2_ws/src/
 cd ~/ros2_ws
 colcon build --packages-select xv_ros2_msgs
 colcon build --packages-select xv_sdk_ros2

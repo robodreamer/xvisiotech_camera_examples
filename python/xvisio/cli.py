@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 def _repo_root_candidates() -> list[Path]:
-    """Candidate roots for locating `scripts/` and `ubuntu-drivers/`.
+    """Candidate roots for locating `scripts/` and `drivers/`.
 
     Works for:
     - Source checkout
@@ -63,9 +63,9 @@ def get_setup_script() -> Path | None:
 
 
 def get_drivers_dir() -> Path | None:
-    """Locate `ubuntu-drivers/` (source checkout / editable install)."""
+    """Locate `drivers/` (source checkout / editable install)."""
 
-    return _find_repo_path("ubuntu-drivers")
+    return _find_repo_path("drivers")
 
 
 def setup_host() -> None:
@@ -85,7 +85,7 @@ def setup_host() -> None:
     if script is None or drivers_dir is None:
         print("ERROR: Could not locate driver install assets in this environment.")
         print("This command currently expects a source checkout or editable install")
-        print("that contains `scripts/` and `ubuntu-drivers/`.")
+        print("that contains `scripts/` and `drivers/`.")
         print("")
         print("Fix:")
         print("  sudo ./scripts/setup_host.sh")

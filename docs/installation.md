@@ -37,7 +37,7 @@ bash install_xvisio_linux.sh
 ```
 
 !!! note "Why a clone is needed"
-    Unlike pure-Python packages, the host setup requires the **XVSDK driver `.deb`** from `ubuntu-drivers/`.
+    Unlike pure-Python packages, the host setup requires the **XVSDK driver `.deb`** from `drivers/`.
     When run without a clone, the installer clones the repo to a temporary directory automatically.
 
 The manual steps below are equivalent if you prefer not to use the script.
