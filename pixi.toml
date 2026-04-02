@@ -63,6 +63,20 @@ test = "pytest test/"
 lint = "black --check python/ examples/ && isort --check python/ examples/"
 format = "black python/ examples/ && isort python/ examples/"
 
+[feature.docs.dependencies]
+python = ">=3.10,<3.13"
+
+[feature.docs.pypi-dependencies]
+mkdocs = ">=1.5"
+mkdocs-material = ">=9.0"
+mkdocstrings = { version = ">=0.24", extras = ["python"] }
+
+[feature.docs.tasks]
+# Build docs without compiling the C++ extension (lazy-load means import works from source)
+docs-build = { cmd = "mkdocs build", env = { PYTHONPATH = "python" } }
+docs-serve = { cmd = "mkdocs serve", env = { PYTHONPATH = "python" } }
+
 [environments]
 default = { features = ["dev"] }
+docs = { features = ["docs"], no-default-feature = true }
 

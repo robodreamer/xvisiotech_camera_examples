@@ -1,0 +1,90 @@
+site_name: Xvisio Python SDK Documentation
+site_description: ROS-free Python SDK for XvisioTech 6DoF SLAM cameras and Seer wireless controllers
+repo_url: https://github.com/xvisiotech/xvisiotech_camera_examples
+repo_name: xvisiotech/xvisiotech_camera_examples
+edit_uri: edit/main/docs/
+
+use_directory_urls: true
+
+hooks:
+  - docs/hooks.py
+
+theme:
+  name: material
+  custom_dir: overrides
+  copyright: Copyright &copy; 2026 Andy Park
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [python]
+          options:
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: true
+            show_root_full_path: false
+            show_object_full_path: false
+            show_category_heading: true
+            show_if_no_docstring: false
+            separate_signature: true
+            line_length: 100
+            docstring_options:
+              warn_unknown_params: false
+              warn_missing_types: false
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: false
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - Changelog: changelog.md
+  - Installation: installation.md
+  - Quickstart: quickstart.md
+  - API Reference:
+    - Overview: api/index.md
+    - Device: api/device.md
+    - Data Types: api/types.md
+  - Examples:
+    - Overview: examples/index.md
+    - Pose + IMU: examples/pose_imu.md
+    - Pose Transforms: examples/pose_transforms.md
+    - 3D Visualization: examples/visualization.md
