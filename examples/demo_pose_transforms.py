@@ -9,6 +9,7 @@ This demonstrates:
 
 import argparse
 import time
+
 import xvisio
 
 
@@ -46,7 +47,9 @@ def main():
             print("ERROR: No devices found")
             print("\nTroubleshooting:")
             print("1. Camera: connect XR-50 via USB; run 'sudo ./scripts/setup_host.sh'")
-            print("2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB")
+            print(
+                "2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB"
+            )
             print("3. Verify XVSDK is installed: ls /usr/lib/libxvsdk.so")
             return
         print("No camera found; using Seer controller only.")
@@ -60,7 +63,9 @@ def main():
     if not devices and controller_devices:
         dev = xvisio.open_controller(port=args.controller_port)
         print("Opened controller device\n")
-        print(f"Controller pose samples ({args.controller_duration:.1f}s at {args.controller_rate:.1f} Hz):")
+        print(
+            f"Controller pose samples ({args.controller_duration:.1f}s at {args.controller_rate:.1f} Hz):"
+        )
         print(f"{'Side':<6} {'Position (x,y,z)':<30} {'Quat (w,x,y,z)':<35} {'Buttons':<30}")
         print("-" * 110)
         sleep_s = 1.0 / args.controller_rate if args.controller_rate > 0 else 0.2
@@ -164,4 +169,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

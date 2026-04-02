@@ -12,8 +12,10 @@ to align camera frame with world frame (matching ROS2 teleop handler).
 """
 
 import argparse
-import xvisio
 import time
+
+import xvisio
+
 
 def main():
     parser = argparse.ArgumentParser(description="Xvisio pose + IMU demo")
@@ -37,7 +39,9 @@ def main():
             print("ERROR: No Xvisio devices found!")
             print("\nTroubleshooting:")
             print("1. Camera: connect XR-50 via USB; run 'sudo ./scripts/setup_host.sh'")
-            print("2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB")
+            print(
+                "2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB"
+            )
             print("3. If you were just added to plugdev group, log out and log back in")
             return
         print("No camera found; using Seer controller only.")
@@ -101,7 +105,9 @@ def main():
                 while time.time() - start_time < 10.0:
                     # Get world-aligned pose (applies rotation offset to align camera frame with world frame)
                     pose = dev.pose_world_aligned()
-                    pos_str = f"({pose.position[0]:.3f},{pose.position[1]:.3f},{pose.position[2]:.3f})"
+                    pos_str = (
+                        f"({pose.position[0]:.3f},{pose.position[1]:.3f},{pose.position[2]:.3f})"
+                    )
                     quat_str = f"({pose.quat_wxyz[0]:.3f},{pose.quat_wxyz[1]:.3f},{pose.quat_wxyz[2]:.3f},{pose.quat_wxyz[3]:.3f})"
 
                     # Get IMU
@@ -129,6 +135,7 @@ def main():
         print("2. Check that udev rules are installed: sudo ./scripts/setup_host.sh")
         print("3. Verify XVSDK is installed: ls /usr/lib/libxvsdk.so")
         raise
+
 
 if __name__ == "__main__":
     main()

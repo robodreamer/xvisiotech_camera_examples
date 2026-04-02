@@ -10,15 +10,17 @@ This example demonstrates:
 - GUI controls for resetting pose reference and clearing trajectory
 """
 
-import xvisio
-import time
-import numpy as np
 import argparse
+import time
 from collections import deque
-from typing import Optional, Any, Callable
+from typing import Any, Callable, Optional
+
+import numpy as np
+import xvisio
 
 try:
     import viser
+
     VISER_AVAILABLE = True
 except ImportError:
     VISER_AVAILABLE = False
@@ -143,9 +145,7 @@ class XvisioPoseVisualizer:
             )
             self.gui.add_markdown("---")
             self._controller_status_markdown = self.gui.add_markdown(
-                "**Controller Stream Status**\n"
-                "- L: waiting for data\n"
-                "- R: waiting for data"
+                "**Controller Stream Status**\n" "- L: waiting for data\n" "- R: waiting for data"
             )
 
     def update_pose(self, pose: xvisio.Pose):
@@ -278,17 +278,21 @@ class XvisioPoseVisualizer:
             f"- stale timeout: {self._controller_stale_timeout_s:.2f}s"
         )
 
-    def update_controller(self, left: Optional[xvisio.ControllerData], right: Optional[xvisio.ControllerData]):
+    def update_controller(
+        self, left: Optional[xvisio.ControllerData], right: Optional[xvisio.ControllerData]
+    ):
         """Update controller frame visualization (left=blue, right=green)."""
         if not self.is_controller_enabled():
             self.clear_controller()
-            self._set_controller_status("hidden (controller view disabled)", "hidden (controller view disabled)")
+            self._set_controller_status(
+                "hidden (controller view disabled)", "hidden (controller view disabled)"
+            )
             return
         now = time.monotonic()
         status_by_side = {"left": "waiting for data", "right": "waiting for data"}
         for data, path, color, frame_attr in [
             # Distinct, color-blind-friendly palette while keeping identical frame size.
-            (left, "/controller/left", (66, 133, 244), "controller_left_frame"),   # blue
+            (left, "/controller/left", (66, 133, 244), "controller_left_frame"),  # blue
             (right, "/controller/right", (244, 180, 0), "controller_right_frame"),  # amber
         ]:
             side = "left" if "left" in path else "right"
@@ -305,10 +309,7 @@ class XvisioPoseVisualizer:
             quat = np.array(data.quat_wxyz, dtype=np.float64)
             pose_vec = np.concatenate((pos, quat), axis=0)
             last_pose_vec = self._controller_last_pose_vec[side]
-            pose_changed = (
-                last_pose_vec is None
-                or np.linalg.norm(pose_vec - last_pose_vec) > 1e-5
-            )
+            pose_changed = last_pose_vec is None or np.linalg.norm(pose_vec - last_pose_vec) > 1e-5
             # Some SDK/controller paths may produce coarse or repeated host timestamps.
             # Consider a sample fresh if timestamp advances OR pose actually changes.
             is_fresh = ((last_host_ts is None) or (host_ts > last_host_ts + 1e-9)) or pose_changed
@@ -362,9 +363,18 @@ class XvisioPoseVisualizer:
 def main():
     parser = argparse.ArgumentParser(description="Visualize Xvisio pose frames in viser")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
-    parser.add_argument("-p", "--port", type=int, default=8080, help="Viser server port (default: 8080)")
-    parser.add_argument("-r", "--rate", type=float, default=100.0, help="Update rate in Hz (default: 100)")
-    parser.add_argument("--controller-port", type=str, default="/dev/ttyUSB0", help="Controller serial port (default: /dev/ttyUSB0)")
+    parser.add_argument(
+        "-p", "--port", type=int, default=8080, help="Viser server port (default: 8080)"
+    )
+    parser.add_argument(
+        "-r", "--rate", type=float, default=100.0, help="Update rate in Hz (default: 100)"
+    )
+    parser.add_argument(
+        "--controller-port",
+        type=str,
+        default="/dev/ttyUSB0",
+        help="Controller serial port (default: /dev/ttyUSB0)",
+    )
     parser.add_argument(
         "--controller-stale-timeout",
         type=float,
@@ -405,7 +415,9 @@ def main():
             print("ERROR: No Xvisio devices (camera or controller) found!")
             print("\nTroubleshooting:")
             print("1. Camera: connect XR-50 via USB; run 'sudo ./scripts/setup_host.sh'")
-            print("2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB")
+            print(
+                "2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB"
+            )
             print("3. If you were just added to plugdev group, log out and log back in")
             return
 
@@ -457,9 +469,11 @@ def main():
                     if (left or right) and frame_count % max(1, int(args.rate)) == 0:
                         for name, c in [("L", left), ("R", right)]:
                             if c is not None:
-                                print(f"  {name}: pos=({c.position[0]:+.3f},{c.position[1]:+.3f},{c.position[2]:+.3f}) "
-                                      f"ts={c.host_timestamp_s:.3f} trigger={c.key_trigger} "
-                                      f"side={c.key_side} rocker=({c.rocker_x},{c.rocker_y}) key={c.key}")
+                                print(
+                                    f"  {name}: pos=({c.position[0]:+.3f},{c.position[1]:+.3f},{c.position[2]:+.3f}) "
+                                    f"ts={c.host_timestamp_s:.3f} trigger={c.key_trigger} "
+                                    f"side={c.key_side} rocker=({c.rocker_x},{c.rocker_y}) key={c.key}"
+                                )
                     time.sleep(sleep_time)
             except KeyboardInterrupt:
                 print("\n\nStopped by user")
@@ -535,13 +549,17 @@ def main():
                     print_interval = max(1, int(args.rate))
                     if args.verbose and frame_count % print_interval == 0:
                         pos = pose.position
-                        print(f"[{frame_count:5d}] pos=({pos[0]:+.3f}, {pos[1]:+.3f}, {pos[2]:+.3f}) "
-                              f"conf={pose.confidence:.2f}")
+                        print(
+                            f"[{frame_count:5d}] pos=({pos[0]:+.3f}, {pos[1]:+.3f}, {pos[2]:+.3f}) "
+                            f"conf={pose.confidence:.2f}"
+                        )
                         if controller_dev and viz.is_controller_enabled():
                             for name, c in [("L", left), ("R", right)]:
                                 if c is not None:
-                                    print(f"  {name}: trigger={c.key_trigger} side={c.key_side} "
-                                          f"rocker=({c.rocker_x},{c.rocker_y}) key={c.key}")
+                                    print(
+                                        f"  {name}: trigger={c.key_trigger} side={c.key_side} "
+                                        f"rocker=({c.rocker_x},{c.rocker_y}) key={c.key}"
+                                    )
 
                     time.sleep(sleep_time)
 

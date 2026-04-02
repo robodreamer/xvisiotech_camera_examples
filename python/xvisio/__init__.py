@@ -11,12 +11,13 @@ Example usage:
             print(pose.position, pose.quat_wxyz, imu.accel)
 """
 
-from ._highlevel import Device, open, discover, open_controller, discover_controllers
-from .types import Pose, ImuSample, DeviceInfo, ControllerData
+from ._highlevel import Device, discover, discover_controllers, open, open_controller
+from .types import ControllerData, DeviceInfo, ImuSample, Pose
 
 # Get version from package metadata (set by pyproject.toml)
 try:
     from importlib.metadata import version as _get_version
+
     __version__ = _get_version("xvisio")
 except Exception:
     __version__ = "0.0.0"  # Fallback for editable installs without metadata
@@ -32,4 +33,3 @@ __all__ = [
     "DeviceInfo",
     "ControllerData",
 ]
-

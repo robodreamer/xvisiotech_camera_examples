@@ -1,10 +1,13 @@
 """High-level Python API for Xvisio devices."""
 
 import time
-from typing import Optional, Iterator, Tuple, Literal
+from typing import Iterator, Literal, Optional, Tuple
+
 import numpy as np
 from spatialmath.base import q2r, r2q
-from .types import Pose, ImuSample, DeviceInfo, ControllerData
+
+from .types import ControllerData, DeviceInfo, ImuSample, Pose
+
 
 def _load_native():
     """Lazy-load the native module.
@@ -64,7 +67,9 @@ def open(
         if serial_number:
             raise RuntimeError(f"Device with serial number '{serial_number}' not found")
         else:
-            raise RuntimeError("No Xvisio devices found. Make sure device is connected and udev rules are installed.")
+            raise RuntimeError(
+                "No Xvisio devices found. Make sure device is connected and udev rules are installed."
+            )
     return Device(dev)
 
 
@@ -318,9 +323,7 @@ class Device:
         self._controller_R_init[side] = q2r(quat_xyzw, order="xyzs")
         self._controller_initialized[side] = True
 
-    def reset_controller_reference(
-        self, side: Literal["left", "right", "both"] = "both"
-    ) -> bool:
+    def reset_controller_reference(self, side: Literal["left", "right", "both"] = "both") -> bool:
         """Reset reference pose(s) for relative controller pose calculations.
 
         Call this when you want to start tracking controller position relative
@@ -488,6 +491,7 @@ class Device:
             raise RuntimeError("SLAM is not enabled. Call enable(slam=True) first.")
 
         import time
+
         # SLAM may need time to initialize - retry a few times
         max_retries = 10
         retry_delay = 0.1
@@ -511,7 +515,6 @@ class Device:
                     "SLAM may still be initializing - try moving the device or waiting longer."
                 )
 
-
     def pose_world_aligned(self, prediction_s: float = 0.0) -> Pose:
         """Get current pose aligned with world frame.
 
@@ -534,7 +537,9 @@ class Device:
         quat_wxyz = np.array(raw_pose.quat_wxyz, dtype=np.float64)
 
         # Convert quaternion [w, x, y, z] to [x, y, z, w] for spatialmath q2r(order="xyzs")
-        quat_xyzw = np.array([quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]], dtype=np.float64)
+        quat_xyzw = np.array(
+            [quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]], dtype=np.float64
+        )
 
         # Convert quaternion to rotation matrix using spatialmath (matching ROS2 handler)
         R = q2r(quat_xyzw, order="xyzs")
@@ -550,7 +555,12 @@ class Device:
         # Convert back to quaternion using spatialmath
         quat_xyzw_world = r2q(R_world, order="xyzs")  # Returns [x, y, z, w]
         # Convert back to [w, x, y, z] format
-        quat_world = (quat_xyzw_world[3], quat_xyzw_world[0], quat_xyzw_world[1], quat_xyzw_world[2])
+        quat_world = (
+            quat_xyzw_world[3],
+            quat_xyzw_world[0],
+            quat_xyzw_world[1],
+            quat_xyzw_world[2],
+        )
 
         return Pose(
             position=tuple(pos_world),
@@ -616,8 +626,13 @@ class Device:
         quat_init_wxyz = self._quat_init
 
         # Convert quaternions [w, x, y, z] to [x, y, z, w] for spatialmath q2r(order="xyzs")
-        quat_xyzw = np.array([quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]], dtype=np.float64)
-        quat_init_xyzw = np.array([quat_init_wxyz[1], quat_init_wxyz[2], quat_init_wxyz[3], quat_init_wxyz[0]], dtype=np.float64)
+        quat_xyzw = np.array(
+            [quat_wxyz[1], quat_wxyz[2], quat_wxyz[3], quat_wxyz[0]], dtype=np.float64
+        )
+        quat_init_xyzw = np.array(
+            [quat_init_wxyz[1], quat_init_wxyz[2], quat_init_wxyz[3], quat_init_wxyz[0]],
+            dtype=np.float64,
+        )
 
         # Convert quaternions to rotation matrices using spatialmath (matching ROS2 handler)
         R = q2r(quat_xyzw, order="xyzs")
@@ -715,6 +730,7 @@ class Device:
             raise RuntimeError("IMU is not enabled. Call enable(imu=True) first.")
 
         import time
+
         start_time = time.time()
         while time.time() - start_time < timeout_s:
             try:
@@ -730,8 +746,10 @@ class Device:
                 time.sleep(0.01)  # 10ms polling interval
                 continue
 
-        raise RuntimeError(f"Failed to get IMU: No data available within {timeout_s}s timeout. "
-                          "Make sure IMU is enabled and device is streaming.")
+        raise RuntimeError(
+            f"Failed to get IMU: No data available within {timeout_s}s timeout. "
+            "Make sure IMU is enabled and device is streaming."
+        )
 
     def imus(self, rate_hz: Optional[float] = None) -> Iterator[ImuSample]:
         """Iterator over IMU samples.
@@ -759,4 +777,3 @@ class Device:
                 print(f"Error getting IMU: {e}")
                 if sleep_time > 0:
                     time.sleep(sleep_time)
-

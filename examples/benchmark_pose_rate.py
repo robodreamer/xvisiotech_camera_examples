@@ -8,11 +8,12 @@ This example measures:
 - Pose update frequency from the SDK
 """
 
-import xvisio
-import time
-import numpy as np
 import argparse
+import time
 from collections import deque
+
+import numpy as np
+import xvisio
 
 
 def run_benchmark(get_sample, duration_s: float, warmup_s: float = 2.0) -> dict:
@@ -121,10 +122,18 @@ def run_benchmark(get_sample, duration_s: float, warmup_s: float = 2.0) -> dict:
         "unique_poses": unique_poses,
         "duplicate_count": duplicate_count,
         "actual_pose_rate_hz": actual_pose_rate,
-        "inter_sample_mean_ms": np.mean(inter_sample_times) * 1000 if len(inter_sample_times) > 0 else 0,
-        "inter_sample_std_ms": np.std(inter_sample_times) * 1000 if len(inter_sample_times) > 0 else 0,
-        "inter_sample_min_ms": np.min(inter_sample_times) * 1000 if len(inter_sample_times) > 0 else 0,
-        "inter_sample_max_ms": np.max(inter_sample_times) * 1000 if len(inter_sample_times) > 0 else 0,
+        "inter_sample_mean_ms": (
+            np.mean(inter_sample_times) * 1000 if len(inter_sample_times) > 0 else 0
+        ),
+        "inter_sample_std_ms": (
+            np.std(inter_sample_times) * 1000 if len(inter_sample_times) > 0 else 0
+        ),
+        "inter_sample_min_ms": (
+            np.min(inter_sample_times) * 1000 if len(inter_sample_times) > 0 else 0
+        ),
+        "inter_sample_max_ms": (
+            np.max(inter_sample_times) * 1000 if len(inter_sample_times) > 0 else 0
+        ),
         "error_count": error_count,
     }
 
@@ -162,7 +171,7 @@ def print_results(results: dict):
     print(f"  Duplicate reads:          {results['duplicate_count']:,}")
     print(f"  Actual pose rate:         {results['actual_pose_rate_hz']:.1f} Hz")
 
-    if 'pose_interval_mean_ms' in results:
+    if "pose_interval_mean_ms" in results:
         print(f"\n{'Pose Update Intervals (host time)':^60}")
         print("-" * 60)
         print(f"  Mean:                     {results['pose_interval_mean_ms']:.2f} ms")
@@ -170,7 +179,7 @@ def print_results(results: dict):
         print(f"  Min:                      {results['pose_interval_min_ms']:.2f} ms")
         print(f"  Max:                      {results['pose_interval_max_ms']:.2f} ms")
 
-    if 'edge_ts_jump_mean_ms' in results:
+    if "edge_ts_jump_mean_ms" in results:
         print(f"\n{'Edge Timestamp Intervals (device time)':^60}")
         print("-" * 60)
         print(f"  Mean:                     {results['edge_ts_jump_mean_ms']:.2f} ms")
@@ -192,8 +201,8 @@ def print_results(results: dict):
     print(f"  ✓ SDK provides new poses at ~{results['actual_pose_rate_hz']:.0f} Hz")
     print(f"  ✓ getPose() call latency: ~{results['inter_sample_mean_ms']*1000:.0f} µs")
 
-    if results['duplicate_count'] > 0:
-        dup_pct = 100 * results['duplicate_count'] / results['total_samples']
+    if results["duplicate_count"] > 0:
+        dup_pct = 100 * results["duplicate_count"] / results["total_samples"]
         print(f"  ⚠ {dup_pct:.1f}% of reads returned duplicate poses (polling too fast)")
     print()
 
@@ -207,25 +216,23 @@ Examples:
   %(prog)s                    # Run 10-second benchmark
   %(prog)s -d 30              # Run 30-second benchmark
   %(prog)s -d 60 -w 5         # 60s benchmark with 5s warmup
-"""
+""",
     )
     parser.add_argument(
-        "-d", "--duration",
+        "-d",
+        "--duration",
         type=float,
         default=10.0,
-        help="Benchmark duration in seconds (default: 10)"
+        help="Benchmark duration in seconds (default: 10)",
     )
     parser.add_argument(
-        "-w", "--warmup",
-        type=float,
-        default=2.0,
-        help="Warmup duration in seconds (default: 2)"
+        "-w", "--warmup", type=float, default=2.0, help="Warmup duration in seconds (default: 2)"
     )
     parser.add_argument(
         "--controller-port",
         type=str,
         default="/dev/ttyUSB0",
-        help="Controller serial port (default: /dev/ttyUSB0)"
+        help="Controller serial port (default: /dev/ttyUSB0)",
     )
     args = parser.parse_args()
 
@@ -241,7 +248,9 @@ Examples:
             print("ERROR: No Xvisio devices found!")
             print("\nTroubleshooting:")
             print("1. Camera: connect XR-50 via USB; run 'sudo ./scripts/setup_host.sh'")
-            print("2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB")
+            print(
+                "2. Controller: connect Seer dongle (e.g. /dev/ttyUSB0); run udev rules for ttyUSB"
+            )
             return
         print("No camera found; using Seer controller only.")
     else:
@@ -296,4 +305,3 @@ Examples:
 
 if __name__ == "__main__":
     main()
-
