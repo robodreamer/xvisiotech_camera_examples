@@ -16,9 +16,32 @@ fi
 
 UDEV_RULES_SRC="${DRIVERS_DIR}/99-xvisio.rules"
 UDEV_RULES_DEST="/etc/udev/rules.d/99-xvisio.rules"
-DEB_FILE="${DRIVERS_DIR}/XVSDK_jammy_amd64_20250227.deb"
 
 echo "=== Xvisio Host Setup ==="
+echo ""
+
+# Detect Ubuntu codename and select matching driver
+if ! command -v lsb_release &>/dev/null; then
+    echo "ERROR: lsb_release not found. Cannot detect Ubuntu version."
+    echo "Install it with: sudo apt-get install lsb-release"
+    exit 1
+fi
+
+UBUNTU_CODENAME=$(lsb_release -cs)
+echo "Detected Ubuntu codename: ${UBUNTU_CODENAME}"
+
+# Find driver matching this Ubuntu release (e.g. XVSDK_jammy_amd64_*.deb)
+DEB_FILE=$(ls "${DRIVERS_DIR}/XVSDK_${UBUNTU_CODENAME}_amd64_"*.deb 2>/dev/null | head -n1)
+
+if [ -z "${DEB_FILE}" ]; then
+    echo ""
+    echo "ERROR: No XVSDK driver found for Ubuntu '${UBUNTU_CODENAME}'."
+    echo "Available drivers in ${DRIVERS_DIR}:"
+    ls "${DRIVERS_DIR}"/XVSDK_*_amd64_*.deb 2>/dev/null | sed 's|.*/||' || echo "  (none)"
+    exit 1
+fi
+
+echo "Selected driver: $(basename "${DEB_FILE}")"
 echo ""
 
 # Check if running as root or with sudo
@@ -59,11 +82,14 @@ else
     echo "  NOTE: You may need to log out and log back in for group changes to take effect"
 fi
 
-# Step 3: Install SuiteSparse (required for stub generation and XVSDK dependencies)
+# Step 3: Install SuiteSparse if not bundled in the driver
+# Newer drivers (noble+) bundle SuiteSparse .so files directly; older drivers rely on the system package.
 echo ""
-echo "[3/4] Installing SuiteSparse libraries..."
-if dpkg -l | grep -q "libsuitesparse-dev"; then
-    echo "SuiteSparse already installed"
+echo "[3/4] Checking SuiteSparse..."
+if dpkg-deb --fsys-tarfile "${DEB_FILE}" | tar -t | grep -q "libcholmod.so"; then
+    echo "✓ SuiteSparse bundled in driver — skipping system install"
+elif dpkg -l | grep -q "libsuitesparse-dev"; then
+    echo "✓ SuiteSparse already installed"
 else
     apt-get install -y libsuitesparse-dev
     echo "✓ SuiteSparse libraries installed"
@@ -100,8 +126,8 @@ echo "=== Setup Complete ==="
 echo ""
 echo "Installed packages:"
 echo "  - udev rules for device access"
-echo "  - SuiteSparse libraries (for stub generation)"
-echo "  - XVSDK driver"
+echo "  - SuiteSparse libraries (system or bundled in driver)"
+echo "  - XVSDK driver: $(basename "${DEB_FILE}")"
 echo ""
 echo "Next steps:"
 echo "1. If you were added to the plugdev group, log out and log back in"
