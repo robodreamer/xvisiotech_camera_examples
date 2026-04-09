@@ -49,7 +49,7 @@ The manual steps below are equivalent if you prefer not to use the script.
 **1. One-time host setup** (installs udev rules, SuiteSparse, and the XVSDK `.deb`):
 
 ```bash
-git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+git clone https://github.com/robodreamer/xvisiotech_camera_examples.git
 cd xvisiotech_camera_examples
 sudo ./scripts/setup_host.sh
 ```

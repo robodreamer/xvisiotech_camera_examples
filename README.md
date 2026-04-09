@@ -23,7 +23,7 @@ The native extension links against **XVSDK** at `/usr/lib/libxvsdk.so`. If `pip`
 **1. One-time host setup** (installs udev rules, SuiteSparse, and the XVSDK `.deb` from `drivers/`):
 
 ```bash
-git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+git clone https://github.com/robodreamer/xvisiotech_camera_examples.git
 cd xvisiotech_camera_examples
 sudo ./scripts/setup_host.sh
 ```
@@ -68,7 +68,7 @@ See the [Installation Guide](docs/installation.md) for more details on running e
 #### 1) Clone the repository
 
 ```bash
-git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git
+git clone https://github.com/robodreamer/xvisiotech_camera_examples.git
 cd xvisiotech_camera_examples
 ```
 
