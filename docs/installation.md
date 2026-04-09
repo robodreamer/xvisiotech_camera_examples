@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Ubuntu 22.04 (x86_64)
+- Ubuntu 22.04 or 24.04 (x86_64)
 - Python 3.10+
 - XvisioTech device connected via USB (camera) or USB dongle (Seer controller)
 
@@ -46,7 +46,7 @@ The manual steps below are equivalent if you prefer not to use the script.
 
 ### Manual steps
 
-**1. One-time host setup** (installs udev rules, SuiteSparse, and the XVSDK `.deb`):
+**1. One-time host setup** (installs udev rules and the XVSDK driver — auto-selected for your Ubuntu version):
 
 ```bash
 git clone https://github.com/robodreamer/xvisiotech_camera_examples.git

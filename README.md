@@ -14,7 +14,7 @@ Python SDK and ROS2 driver for [XvisioTech](https://www.xvisiotech.com/) devices
 
 The `xvisio` Python package provides direct access to pose, IMU, and controller data — no ROS required.
 
-**1. One-time host setup** (installs udev rules and the XVSDK driver, requires Ubuntu 22.04):
+**1. One-time host setup** (installs udev rules and the XVSDK driver — auto-selected for Ubuntu 22.04 or 24.04):
 
 ```bash
 git clone https://github.com/robodreamer/xvisiotech_camera_examples.git
