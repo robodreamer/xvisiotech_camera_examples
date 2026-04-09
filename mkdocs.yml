@@ -1,7 +1,7 @@
 site_name: Xvisio Python SDK Documentation
 site_description: ROS-free Python SDK for XvisioTech 6DoF SLAM cameras and Seer wireless controllers
-repo_url: https://github.com/xvisiotech/xvisiotech_camera_examples
-repo_name: xvisiotech/xvisiotech_camera_examples
+repo_url: https://github.com/robodreamer/xvisiotech_camera_examples
+repo_name: robodreamer/xvisiotech_camera_examples
 edit_uri: edit/main/docs/
 
 use_directory_urls: true

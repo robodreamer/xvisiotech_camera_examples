@@ -36,9 +36,9 @@ xvisio-setup = "xvisio.cli:setup_host"
 xvisio-examples = "xvisio.cli:examples_cmd"
 
 [project.urls]
-Homepage = "https://github.com/xvisiotech/xvisio-python"
-Repository = "https://github.com/xvisiotech/xvisio-python"
-"Bug Reports" = "https://github.com/xvisiotech/xvisio-python/issues"
+Homepage = "https://github.com/robodreamer/xvisiotech_camera_examples"
+Repository = "https://github.com/robodreamer/xvisiotech_camera_examples"
+"Bug Reports" = "https://github.com/robodreamer/xvisiotech_camera_examples/issues"
 
 # ── scikit-build-core (C++ extension build) ───────────────────────────────────
 

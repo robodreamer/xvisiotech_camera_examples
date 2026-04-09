@@ -207,7 +207,7 @@ def examples_cmd(argv: list[str] | None = None) -> int:
         print("Try: pip install --force-reinstall xvisio", file=sys.stderr)
         print("\nAlternatively, clone the repository:", file=sys.stderr)
         print(
-            "  git clone https://github.com/xvisiotech/xvisiotech_camera_examples.git",
+            "  git clone https://github.com/robodreamer/xvisiotech_camera_examples.git",
             file=sys.stderr,
         )
         return 1

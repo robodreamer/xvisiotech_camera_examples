@@ -28,7 +28,7 @@ PYTHON="${PYTHON:-python3}"
 VENV_DIR="./.venv"
 EDITABLE=false
 SKIP_HOST_SETUP=false
-REPO_URL="https://github.com/xvisiotech/xvisiotech_camera_examples.git"
+REPO_URL="https://github.com/robodreamer/xvisiotech_camera_examples.git"
 TMP_CLONE=""
 
 # ── Argument parsing ─────────────────────────────────────────────────────────
