@@ -89,7 +89,51 @@ else
   echo "Skipping host setup (--skip-host-setup)."
 fi
 
-# ── Step 2: Python virtual environment ────────────────────────────────────────
+# ── Step 2: Python version check ─────────────────────────────────────────────
+step "Checking Python version"
+
+py_version_ok() {
+  local py="$1"
+  local major minor
+  major=$("$py" -c "import sys; print(sys.version_info.major)" 2>/dev/null) || return 1
+  minor=$("$py" -c "import sys; print(sys.version_info.minor)" 2>/dev/null) || return 1
+  [[ "$major" -gt 3 || ( "$major" -eq 3 && "$minor" -ge 10 ) ]]
+}
+
+if ! command -v "$PYTHON" &>/dev/null; then
+  red "ERROR: Python interpreter not found: $PYTHON"
+  exit 1
+fi
+
+if ! py_version_ok "$PYTHON"; then
+  PY_VERSION=$("$PYTHON" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  echo "Python $PY_VERSION is too old (xvisio requires >= 3.10). Looking for a newer version..."
+
+  FOUND_PY=""
+  for candidate in python3.12 python3.11 python3.10; do
+    if command -v "$candidate" &>/dev/null && py_version_ok "$candidate"; then
+      FOUND_PY="$candidate"
+      break
+    fi
+  done
+
+  if [[ -n "$FOUND_PY" ]]; then
+    echo "Found $FOUND_PY — switching to it."
+    PYTHON="$FOUND_PY"
+  else
+    echo "No suitable Python found. Installing Python 3.10 via deadsnakes PPA..."
+    sudo apt-get install -y software-properties-common
+    sudo add-apt-repository -y ppa:deadsnakes/ppa
+    sudo apt-get update -q
+    sudo apt-get install -y python3.10 python3.10-venv python3.10-distutils
+    PYTHON="python3.10"
+  fi
+fi
+
+PY_VERSION=$("$PYTHON" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+green "✓ Python $PY_VERSION ($PYTHON)"
+
+# ── Step 3: Python virtual environment ────────────────────────────────────────
 step "Python virtual environment"
 if [[ ! -d "$VENV_DIR" ]]; then
   "$PYTHON" -m venv "$VENV_DIR"
@@ -102,7 +146,17 @@ fi
 source "${VENV_DIR}/bin/activate"
 pip install -U pip -q
 
-# ── Step 3: Install xvisio ────────────────────────────────────────────────────
+# ── Step 4: Check C++ compiler ───────────────────────────────────────────────
+step "Checking C++ compiler"
+if ! dpkg -l build-essential 2>/dev/null | grep -q "^ii"; then
+  echo "build-essential not found — installing..."
+  sudo apt-get install -y build-essential
+  green "✓ build-essential installed"
+else
+  echo "C++ compiler already present."
+fi
+
+# ── Step 5: Install xvisio ────────────────────────────────────────────────────
 step "Installing xvisio"
 if [[ "$EDITABLE" == true ]]; then
   if [[ "$IN_REPO" == false ]]; then
@@ -116,7 +170,7 @@ else
   green "✓ Installed xvisio from PyPI"
 fi
 
-# ── Step 4: Verify ────────────────────────────────────────────────────────────
+# ── Step 6: Verify ────────────────────────────────────────────────────────────
 step "Verifying installation"
 python -c "import xvisio; print('xvisio', xvisio.__version__)"
 green "✓ Installation complete"
