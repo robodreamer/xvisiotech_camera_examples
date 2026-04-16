@@ -58,6 +58,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# ── Guard: must not run inside an active venv ────────────────────────────────
+if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+  red "ERROR: A virtual environment is currently active ($VIRTUAL_ENV)."
+  red "Please deactivate it first:  deactivate"
+  red "Then re-run this script."
+  exit 1
+fi
+
 # ── Detect repo context ───────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd 2>/dev/null || echo "")"
@@ -120,6 +128,12 @@ if ! py_version_ok "$PYTHON"; then
   if [[ -n "$FOUND_PY" ]]; then
     echo "Found $FOUND_PY — switching to it."
     PYTHON="$FOUND_PY"
+    # ensure the venv module is available for this interpreter
+    if ! "$PYTHON" -m venv --help &>/dev/null; then
+      PY_PKG="${PYTHON##*/}-venv"   # e.g. python3.10-venv
+      echo "$PY_PKG not installed — installing..."
+      sudo apt-get install -y "$PY_PKG"
+    fi
   else
     echo "No suitable Python found. Installing Python 3.10 via deadsnakes PPA..."
     sudo apt-get install -y software-properties-common
@@ -135,11 +149,20 @@ green "✓ Python $PY_VERSION ($PYTHON)"
 
 # ── Step 3: Python virtual environment ────────────────────────────────────────
 step "Python virtual environment"
+if [[ -d "$VENV_DIR" ]]; then
+  VENV_PY="${VENV_DIR}/bin/python"
+  if ! py_version_ok "$VENV_PY"; then
+    VENV_VER=$("$VENV_PY" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "unknown")
+    echo "Existing venv at $VENV_DIR uses Python $VENV_VER (too old) — recreating with $PYTHON..."
+    rm -rf "$VENV_DIR"
+  else
+    echo "Venv already exists at $VENV_DIR — reusing."
+  fi
+fi
+
 if [[ ! -d "$VENV_DIR" ]]; then
   "$PYTHON" -m venv "$VENV_DIR"
   green "✓ Created venv at $VENV_DIR"
-else
-  echo "Venv already exists at $VENV_DIR — reusing."
 fi
 
 # shellcheck disable=SC1091
