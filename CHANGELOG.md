@@ -117,6 +117,26 @@ Initial release of the ROS-free Python SDK for Xvisio devices.
 
 ---
 
+## Repository & Install
+
+### [0.4.0] - 2026-04-16
+
+#### Fixed
+- Install script: detect Python < 3.10 and auto-install or switch to a compatible version
+- Install script: refuse to run inside an active venv to prevent confusing pip errors
+- Install script: check for `build-essential` (C++ compiler) before building from source
+- Install script: recreate `.venv` if it was created with an old Python version
+- Install script: verify `python3.X-venv` package exists before creating venv
+- GitHub repo URLs corrected from `xvisiotech` to `robodreamer` org
+
+#### Changed
+- README streamlined to defer to documentation site
+- Pixi config consolidated into `pyproject.toml`
+- Repo reorganized to separate Python API and ROS2/Docker use-cases
+- MkDocs documentation site added with GitHub Pages workflow
+
+---
+
 ## ROS2 Driver
 
 ### [Unreleased] - 2025-03-03
