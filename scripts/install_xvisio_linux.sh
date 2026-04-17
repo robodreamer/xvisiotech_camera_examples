@@ -151,7 +151,11 @@ green "✓ Python $PY_VERSION ($PYTHON)"
 step "Python virtual environment"
 if [[ -d "$VENV_DIR" ]]; then
   VENV_PY="${VENV_DIR}/bin/python"
-  if ! py_version_ok "$VENV_PY"; then
+  VENV_ACTIVATE="${VENV_DIR}/bin/activate"
+  if [[ ! -x "$VENV_PY" || ! -f "$VENV_ACTIVATE" ]]; then
+    echo "Existing venv at $VENV_DIR is incomplete — recreating."
+    rm -rf "$VENV_DIR"
+  elif ! py_version_ok "$VENV_PY"; then
     VENV_VER=$("$VENV_PY" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "unknown")
     echo "Existing venv at $VENV_DIR uses Python $VENV_VER (too old) — recreating with $PYTHON..."
     rm -rf "$VENV_DIR"

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Python SDK (pip package: `xvisio`)
 
+### [Unreleased]
+
+#### Fixed
+- `scripts/install_xvisio_linux.sh` now recreates incomplete virtual environments instead of failing later at `source .venv/bin/activate`.
+
+#### Changed
+- Installation docs now recommend creating a clean virtual environment before `pip install xvisio`.
+- Troubleshooting docs now clarify that `pip` hash-mismatch errors usually come from local/system `pip` configuration rather than this repository's package metadata.
+
 ### [0.4.0] - 2026-03-30
 
 Improved controller reference-reset behavior to support side-specific resets without cross-arm coupling.
@@ -183,4 +192,3 @@ Initial release of the ROS-free Python SDK for Xvisio devices.
 - Basic SLAM functionality
 - IMU data publishing
 - ROS2 launch files and configuration
-

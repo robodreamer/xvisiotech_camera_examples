@@ -22,10 +22,19 @@ cd xvisiotech_camera_examples
 sudo ./scripts/setup_host.sh
 ```
 
-**2. Install:**
+**2. Install into a virtual environment:**
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip
 pip install xvisio
+```
+
+If you prefer a one-shot Ubuntu installer that also creates the virtual environment for you, use:
+
+```bash
+bash scripts/install_xvisio_linux.sh
 ```
 
 **3. Run:**
@@ -41,6 +50,11 @@ with xvisio.open() as dev:
 ```
 
 For detailed installation options, troubleshooting, and the full API reference, see the **[documentation site](https://robodreamer.github.io/xvisiotech_camera_examples/)**.
+
+Common install issues:
+
+- If `pip` reports `THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE`, that usually comes from a user or system `pip` policy such as `require-hashes` or an injected constraints file. `xvisio` does not ship hashed requirements in this repo. Use a clean virtual environment and inspect `pip config debug` if the error persists.
+- If `scripts/install_xvisio_linux.sh` says a venv already exists but cannot activate it, remove the broken environment and rerun the script, or update to a version of the script that recreates incomplete virtual environments automatically.
 
 ---
 

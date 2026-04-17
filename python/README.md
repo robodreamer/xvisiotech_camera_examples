@@ -20,6 +20,15 @@ This installs:
 pixi run install
 ```
 
+For an end-user PyPI install outside the dev environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install xvisio
+```
+
 ### 3. Run demo
 
 ```bash
@@ -121,6 +130,10 @@ Iterator over IMU samples.
 - **`ImportError: Failed to import xvisio native module`**:
   - Run `pixi run install`
   - Confirm XVSDK is installed: `ls /usr/lib/libxvsdk.so`
+- **`THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE` during `pip install xvisio`**:
+  - This usually comes from local or system `pip` configuration, not from this repository
+  - Check `pip config debug` for `require-hashes` or inherited constraints files
+  - Retry from a clean virtual environment
 - **No devices found**:
   - Run `sudo ./scripts/setup_host.sh`
   - Unplug/replug the device
@@ -130,4 +143,3 @@ Iterator over IMU samples.
   - The module works fine without `.pyi` files (they're just for IDE autocomplete)
   - To enable stub generation: `sudo apt-get install libsuitesparse-dev`
   - This installs all SuiteSparse dependencies (`libspqr2`, `libcxsparse3`, etc.)
-
