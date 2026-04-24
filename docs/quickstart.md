@@ -75,3 +75,4 @@ with xvisio.open() as dev:
 - [Pose Transforms Example](examples/pose_transforms.md) — Raw vs world-aligned vs relative poses
 - [Pose + IMU Example](examples/pose_imu.md) — Complete demo script with error handling
 - [3D Visualization Example](examples/visualization.md) — Live pose visualization in the browser
+- [Installation Guide](installation.md#running-the-embodik-panda-teleop-example) — Install EmbodiK solver support and run Panda teleop from the same `xvisio` venv

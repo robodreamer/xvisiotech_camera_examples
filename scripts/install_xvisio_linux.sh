@@ -5,6 +5,7 @@
 #   bash scripts/install_xvisio_linux.sh
 #   bash scripts/install_xvisio_linux.sh --python python3.12 --venv ./.venv
 #   bash scripts/install_xvisio_linux.sh --editable
+#   bash scripts/install_xvisio_linux.sh --teleop
 #
 # Usage (without cloning — installs xvisio from PyPI):
 #   curl -fsSL -O <GIST_URL>/install_xvisio_linux.sh
@@ -14,11 +15,16 @@
 #   1. Installs system packages (udev rules + XVSDK driver) using setup_host.sh
 #   2. Creates a Python virtual environment
 #   3. Installs xvisio from PyPI (or editable from a local clone)
+#   4. Optionally installs EmbodiK solver/example support for teleop
+#   When run outside a clone, it downloads only the host setup script and driver
+#   assets needed for step 1 instead of cloning the full repository.
 #
 # Flags:
 #   --python PATH      Python interpreter to use (default: python3)
 #   --venv   PATH      Virtual environment path (default: ./.venv)
 #   --editable         Editable install from repo (default: pip install xvisio)
+#   --teleop           Also install EmbodiK solver/example dependencies for teleop
+#   --host-assets MODE Host setup asset source when outside a clone: minimal (default) or clone
 #   --skip-host-setup  Skip sudo setup_host.sh (udev rules + XVSDK driver)
 #   --help             Show this help message
 
@@ -27,8 +33,11 @@ set -euo pipefail
 PYTHON="${PYTHON:-python3}"
 VENV_DIR="./.venv"
 EDITABLE=false
+INSTALL_TELEOP=false
 SKIP_HOST_SETUP=false
+HOST_ASSETS_MODE="minimal"
 REPO_URL="https://github.com/robodreamer/xvisiotech_camera_examples.git"
+RAW_BASE_URL="https://raw.githubusercontent.com/robodreamer/xvisiotech_camera_examples/main"
 TMP_CLONE=""
 
 # ── Argument parsing ─────────────────────────────────────────────────────────
@@ -37,6 +46,15 @@ while [[ $# -gt 0 ]]; do
     --python)   PYTHON="$2";           shift 2 ;;
     --venv)     VENV_DIR="$2";         shift 2 ;;
     --editable) EDITABLE=true;         shift   ;;
+    --teleop)   INSTALL_TELEOP=true;   shift   ;;
+    --host-assets)
+      HOST_ASSETS_MODE="$2"
+      if [[ "$HOST_ASSETS_MODE" != "minimal" && "$HOST_ASSETS_MODE" != "clone" ]]; then
+        echo "ERROR: --host-assets must be 'minimal' or 'clone'" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
     --skip-host-setup) SKIP_HOST_SETUP=true; shift ;;
     --help|-h)
       grep '^#' "$0" | sed 's/^# \?//'
@@ -51,6 +69,50 @@ green() { printf '\033[32m%s\033[0m\n' "$*"; }
 red()   { printf '\033[31m%s\033[0m\n' "$*" >&2; }
 step()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 
+download_file() {
+  local url="$1"
+  local dest="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$url" -o "$dest"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q "$url" -O "$dest"
+  else
+    red "ERROR: Need curl or wget to download host setup assets."
+    exit 1
+  fi
+}
+
+download_host_setup_assets() {
+  local dest="$1"
+  mkdir -p "${dest}/scripts" "${dest}/drivers"
+
+  echo "Downloading host setup assets from ${RAW_BASE_URL}..."
+  download_file "${RAW_BASE_URL}/scripts/setup_host.sh" "${dest}/scripts/setup_host.sh"
+  download_file "${RAW_BASE_URL}/drivers/99-xvisio.rules" "${dest}/drivers/99-xvisio.rules"
+  download_file "${RAW_BASE_URL}/drivers/XVSDK_jammy_amd64_20250227.deb" \
+    "${dest}/drivers/XVSDK_jammy_amd64_20250227.deb"
+  chmod +x "${dest}/scripts/setup_host.sh"
+}
+
+persist_teleop_runtime_env() {
+  local activate_file="${VENV_DIR}/bin/activate"
+  local lib_dir="$1"
+  local begin_marker="# >>> xvisio teleop runtime env >>>"
+  local end_marker="# <<< xvisio teleop runtime env <<<"
+
+  if [[ ! -f "$activate_file" ]]; then
+    return
+  fi
+
+  sed -i "/${begin_marker}/,/${end_marker}/d" "$activate_file"
+  cat >> "$activate_file" <<EOF
+
+${begin_marker}
+export LD_LIBRARY_PATH="${lib_dir}\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}"
+${end_marker}
+EOF
+}
+
 cleanup() {
   if [[ -n "$TMP_CLONE" && -d "$TMP_CLONE" ]]; then
     rm -rf "$TMP_CLONE"
@@ -58,12 +120,18 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ── Guard: must not run inside an active venv ────────────────────────────────
+# ── Guard: avoid accidentally installing into the wrong active venv ──────────
 if [[ -n "${VIRTUAL_ENV:-}" ]]; then
-  red "ERROR: A virtual environment is currently active ($VIRTUAL_ENV)."
-  red "Please deactivate it first:  deactivate"
-  red "Then re-run this script."
-  exit 1
+  ACTIVE_VENV="$(readlink -f "$VIRTUAL_ENV")"
+  TARGET_VENV="$(readlink -m "$VENV_DIR")"
+  if [[ "$ACTIVE_VENV" != "$TARGET_VENV" ]]; then
+    red "ERROR: A different virtual environment is currently active ($VIRTUAL_ENV)."
+    red "Target venv for this install is: $VENV_DIR"
+    red "Please deactivate it first:  deactivate"
+    red "Then re-run this script, or pass --venv \"$VIRTUAL_ENV\" to update the active environment."
+    exit 1
+  fi
+  echo "Using active target virtual environment: $VIRTUAL_ENV"
 fi
 
 # ── Detect repo context ───────────────────────────────────────────────────────
@@ -85,10 +153,16 @@ if [[ "$SKIP_HOST_SETUP" == false ]]; then
     # Running from inside the cloned repo
     sudo bash "${REPO_ROOT}/scripts/setup_host.sh"
   else
-    # Running standalone (downloaded via curl) — clone repo to temp dir first
-    echo "No local clone detected. Cloning repo to a temporary directory..."
     TMP_CLONE="$(mktemp -d)"
-    git clone --depth=1 "$REPO_URL" "$TMP_CLONE"
+    if [[ "$HOST_ASSETS_MODE" == "clone" ]]; then
+      # Running standalone, but user requested the full repository checkout.
+      echo "No local clone detected. Cloning repo to a temporary directory..."
+      git clone --depth=1 "$REPO_URL" "$TMP_CLONE"
+    else
+      # Running standalone (downloaded via curl) — download only required host assets.
+      echo "No local clone detected. Downloading setup_host.sh and driver assets..."
+      download_host_setup_assets "$TMP_CLONE"
+    fi
     sudo bash "${TMP_CLONE}/scripts/setup_host.sh"
   fi
 
@@ -197,12 +271,58 @@ else
   green "✓ Installed xvisio from PyPI"
 fi
 
-# ── Step 6: Verify ────────────────────────────────────────────────────────────
+# ── Step 6: Optional EmbodiK teleop support ───────────────────────────────────
+if [[ "$INSTALL_TELEOP" == true ]]; then
+  step "Installing EmbodiK teleop support"
+  echo "Installing EmbodiK system dependencies..."
+  sudo apt-get install -y \
+    build-essential \
+    cmake \
+    ninja-build \
+    pkg-config \
+    libeigen3-dev \
+    liburdfdom-dev
+
+  echo "Installing EmbodiK Python build dependencies into ${VENV_DIR}..."
+  pip install pin scikit-build-core nanobind cmake ninja
+
+  echo "Configuring clean EmbodiK build/runtime paths from the PyPI pin wheel..."
+  unset LD_LIBRARY_PATH DYLD_LIBRARY_PATH CMAKE_PREFIX_PATH pinocchio_DIR || true
+  PIN_PREFIX="$(python -c 'import pinocchio, pathlib; print(pathlib.Path(pinocchio.__file__).resolve().parents[4])')"
+  CMEEL_LIB_DIR="${PIN_PREFIX}/lib"
+  export CMAKE_PREFIX_PATH="${PIN_PREFIX}"
+  export LD_LIBRARY_PATH="${CMEEL_LIB_DIR}"
+  echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
+  echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+  persist_teleop_runtime_env "$CMEEL_LIB_DIR"
+
+  echo "Installing EmbodiK solver and example dependencies..."
+  pip install --no-build-isolation "embodik[examples]"
+  python -c "import embodik; print('embodik', embodik.__version__)"
+  green "✓ EmbodiK teleop support installed"
+fi
+
+# ── Step 7: Verify ────────────────────────────────────────────────────────────
 step "Verifying installation"
 python -c "import xvisio; print('xvisio', xvisio.__version__)"
 green "✓ Installation complete"
 
-cat <<'EOF'
+if [[ "$INSTALL_TELEOP" == true ]]; then
+  cat <<'EOF'
+
+Next steps:
+  1. If added to plugdev group above, log out and log back in
+  2. Connect your Xvisio tracking camera or Seer controller
+  3. Activate the venv:
+       source .venv/bin/activate
+  4. Copy and run the EmbodiK Panda teleop example:
+       embodik-examples --copy
+       cd embodik_examples
+       python 03_teleop_ik.py --robot panda
+     Seer controller only: add --controller-port /dev/ttyUSB0 if needed
+EOF
+else
+  cat <<'EOF'
 
 Next steps:
   1. If added to plugdev group above, log out and log back in
@@ -211,3 +331,4 @@ Next steps:
        source .venv/bin/activate
        python -c "import xvisio; print(xvisio.discover())"
 EOF
+fi

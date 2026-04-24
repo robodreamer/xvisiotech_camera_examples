@@ -29,6 +29,20 @@ pip install -U pip
 pip install xvisio
 ```
 
+Optional: install the EmbodiK solver plus its example dependencies into the
+same virtual environment to run the Panda teleop example:
+
+```bash
+bash scripts/install_xvisio_linux.sh --teleop          # fresh install
+# or, after the manual xvisio setup above:
+bash scripts/install_xvisio_linux.sh --skip-host-setup --teleop
+source .venv/bin/activate
+embodik-examples --copy
+cd embodik_examples
+python 03_teleop_ik.py --robot panda
+# Seer controller only: add --controller-port /dev/ttyUSB0 if needed
+```
+
 ### 3. Run demo
 
 ```bash
