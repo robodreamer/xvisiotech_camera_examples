@@ -31,10 +31,26 @@ pip install -U pip
 pip install xvisio
 ```
 
+If you want EmbodiK's Panda teleop example support, the one-shot installer can
+add it to the same environment:
+
+```bash
+curl -fsSL -O https://gist.githubusercontent.com/robodreamer/fb7db4b86c9e63f8737da32ee6f9e98f/raw/install_xvisio_linux.sh
+bash install_xvisio_linux.sh --teleop                 # fresh install, no repo clone
+# or, after the manual xvisio setup above:
+bash scripts/install_xvisio_linux.sh --skip-host-setup --teleop
+source .venv/bin/activate
+embodik-examples --copy
+cd embodik_examples
+python 03_teleop_ik.py --robot panda
+# Seer controller only: add --controller-port /dev/ttyUSB0 if needed
+```
+
 If you prefer a one-shot Ubuntu installer that also creates the virtual environment for you, use:
 
 ```bash
-bash scripts/install_xvisio_linux.sh
+curl -fsSL -O https://gist.githubusercontent.com/robodreamer/fb7db4b86c9e63f8737da32ee6f9e98f/raw/install_xvisio_linux.sh
+bash install_xvisio_linux.sh
 ```
 
 **3. Run:**

@@ -13,10 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Fixed
 - `scripts/install_xvisio_linux.sh` now recreates incomplete virtual environments instead of failing later at `source .venv/bin/activate`.
+- `scripts/install_xvisio_linux.sh --teleop` now installs EmbodiK solver/example support into the same virtual environment for Panda teleop.
+- `scripts/install_xvisio_linux.sh --teleop` now uses a clean PyPI `pin` build path and persists the matching runtime library path for EmbodiK's COAL/Pinocchio dependencies.
+- Standalone `scripts/install_xvisio_linux.sh` runs now download only the host setup script and driver assets by default, with `--host-assets clone` available for the full temporary clone path.
 
 #### Changed
 - Installation docs now recommend creating a clean virtual environment before `pip install xvisio`.
 - Troubleshooting docs now clarify that `pip` hash-mismatch errors usually come from local/system `pip` configuration rather than this repository's package metadata.
+- Added a `teleop` optional dependency and docs for installing EmbodiK solver/example support in the same `xvisio` virtual environment.
 
 ### [0.4.0] - 2026-03-30
 

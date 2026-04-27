@@ -30,6 +30,7 @@ keywords = ["robotics", "slam", "imu", "tracking", "xvisio"]
 [project.optional-dependencies]
 visualization = ["viser>=1.0.0"]
 examples = ["viser>=1.0.0"]
+teleop = ["embodik[examples]>=0.20.0"]
 
 [project.scripts]
 xvisio-setup = "xvisio.cli:setup_host"
