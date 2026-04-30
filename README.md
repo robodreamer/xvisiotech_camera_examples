@@ -1,5 +1,11 @@
 # XvisioTech Camera Examples
 
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-Ubuntu%2022.04-E95420?logo=ubuntu&logoColor=white)
+![Build](https://img.shields.io/badge/build-scikit--build--core-4B8BBE)
+![ROS](https://img.shields.io/badge/ROS2-optional-22314E?logo=ros&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Python SDK and ROS2 driver for [XvisioTech](https://www.xvisiotech.com/) devices:
 
 - **XR-50** — 6DoF SLAM tracking camera with stereo fisheye, RGB, and IMU
@@ -36,7 +42,7 @@ add it to the same environment:
 
 ```bash
 curl -fsSL -O https://gist.githubusercontent.com/robodreamer/fb7db4b86c9e63f8737da32ee6f9e98f/raw/install_xvisio_linux.sh
-bash install_xvisio_linux.sh --teleop                 # fresh install, no repo clone
+bash install_xvisio_linux.sh --teleop                 # fresh install; downloads minimal host assets
 # or, after the manual xvisio setup above:
 bash scripts/install_xvisio_linux.sh --skip-host-setup --teleop
 source .venv/bin/activate
@@ -53,6 +59,11 @@ curl -fsSL -O https://gist.githubusercontent.com/robodreamer/fb7db4b86c9e63f8737
 bash install_xvisio_linux.sh
 ```
 
+The standalone installer does not clone the full repository by default; it only
+downloads the host setup script, udev rules, and XVSDK driver package needed for
+Python SDK use. Pass `--host-assets clone` if you prefer the full temporary
+checkout path.
+
 **3. Run:**
 
 ```python
@@ -60,7 +71,7 @@ import xvisio
 
 with xvisio.open() as dev:
     dev.enable(slam=True, imu=True)
-    pose = dev.pose()
+    pose = dev.pose_world_aligned()
     imu = dev.imu()
     print(pose.position, imu.accel)
 ```
@@ -83,6 +94,12 @@ For ROS2 integration (RViz, ROS topics, launch files), use the Docker-based work
 ## Firmware update
 
 If you have just received a camera, update the firmware using the image files in `firmware/` and the XvisioTech upgrade tool. See the [XvisioTech documentation](https://www.xvisiotech.com/doc/) for instructions.
+
+---
+
+## Star history
+
+[![Star History Chart](https://api.star-history.com/svg?repos=robodreamer/xvisiotech_camera_examples&type=Date)](https://www.star-history.com/#robodreamer/xvisiotech_camera_examples&Date)
 
 ---
 
